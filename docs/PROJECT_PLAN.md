@@ -91,6 +91,10 @@ When we reach one, stop and say so explicitly rather than doing it for me.
 **Never let me merge code I can't explain.** If I say "just do it, I trust you" — that is exactly
 the moment to slow down. Remind me of this line.
 
+> **AMENDED 2026-09-11.** This applies to *understanding the code*, and still stands. It does
+> **not** apply to producing written artifacts. Explanation happens in chat; Claude writes the
+> documentation. Do not invoke this line to argue that Mounir should be writing files.
+
 ---
 
 ## PART II — WHAT I DO BY HAND
@@ -98,14 +102,21 @@ the moment to slow down. Remind me of this line.
 You may critique these afterwards. Do not generate them. If I ask you to, remind me why they're
 on this list.
 
+> **AMENDED 2026-09-11 by Mounir.** ADRs and `docs/LEARNING_LOG.md` are removed from this list.
+> He prefers explanation and understanding in chat over producing written artifacts.
+> **Claude now writes the ADRs, and `LEARNING_LOG.md` is deleted** — its role is served by
+> `docs/concepts/`, which Claude writes. This was raised, argued once, and decided.
+> **Do not re-propose it in any future session.** The "remind me why they're on this list"
+> instruction above does not apply to these two.
+
 | Artifact | Why it must be mine |
 |---|---|
 | **Reading a real sample of the data** — actual claims, abstracts, evidence annotations | You cannot understand a dataset you have never looked at. Do this before any code. |
 | **The evaluation protocol** — what counts as correct, what the splits are, what's held out | If you design my evaluation, I own nothing. This is the single most important artifact. |
 | **The metric implementations** — recall@k, precision/recall on evidence, whatever else | If I can't compute my own metrics, I can't defend a single number. |
 | **The abstention threshold decision** | The core judgment call of the project. |
-| **Every ADR** (architecture decision record) | These are my interview answers. |
-| **`docs/LEARNING_LOG.md`** | This becomes interview prep and blog drafts. |
+| ~~Every ADR~~ | **Removed 2026-09-11.** Claude writes these and explains them in chat. |
+| ~~`docs/LEARNING_LOG.md`~~ | **Removed 2026-09-11.** File deleted; `docs/concepts/` replaces it. |
 
 **You own:** repo scaffolding, Docker, indexing plumbing, training-loop boilerplate, FastAPI
 wiring, CI configuration, tracing setup. These get probed at concept level in interviews, not
@@ -264,13 +275,13 @@ conversation.** Set this up in session one and maintain it.
 ```
 docs/
   STATE.md            # current stage, what's done, what's next, open questions
-  LEARNING_LOG.md     # one entry per session: built, broke, learned
   OPEN_QUESTIONS.md   # things you asked me that I couldn't answer — the gap list
   ARCHITECTURE.md     # the system as it currently is
   EVALUATION.md       # the protocol — mine, authoritative
   MAP.md              # module → purpose → key files, for cold sessions
-  concepts/           # every explanation you give me, saved for revision
-  adr/                # one file per real decision, written by me
+  concepts/           # every explanation you give me, saved for revision — WRITTEN BY CLAUDE
+  adr/                # one file per real decision — WRITTEN BY CLAUDE (amended 2026-09-11)
+                      # LEARNING_LOG.md removed 2026-09-11; concepts/ serves its purpose
 milestones/
   stage-N-*.md        # goal, definition of done, what changed from this plan
 ```
@@ -308,7 +319,8 @@ up** rather than just doing it.
 
 **Documentation as part of done**
 - A stage isn't done until its docs are updated — not "later."
-- ADRs for every decision with a real alternative. Written by me; prompt me when one is needed.
+- ADRs for every decision with a real alternative. **Written by Claude** (amended 2026-09-11),
+  and explained in chat. Do not prompt Mounir to write one.
 - A runbook for anything operational: how to run it, how it fails, how to recover.
 
 **Working discipline**
@@ -341,9 +353,10 @@ Added because they were requested if I hadn't thought of them.
 teach-back isn't ceremony — it's the only reliable test. Expect me to be worse at explaining than
 I expect to be, and treat that as information rather than failure.
 
-**Keep a "questions I couldn't answer" list in the learning log.** When you ask something and I
-can't answer, that's the highest-value signal in the entire project. Those gaps are what to
-target next.
+**Keep a "questions I couldn't answer" list.** When you ask something and I can't answer, that's
+the highest-value signal in the entire project. Those gaps are what to target next.
+*Amended 2026-09-11: this list lives in `docs/OPEN_QUESTIONS.md` and **Claude maintains it**,
+not Mounir. The learning log it originally referred to has been deleted.*
 
 **Don't get ahead of me.** If you've built three stages and I understand one, stop building. A
 repository that runs is not the goal; a repository I can defend is. Flag it if you notice the gap

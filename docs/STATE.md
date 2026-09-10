@@ -49,9 +49,18 @@ before a single activation). To be measured, not trusted.
 | CV split | 5 folds over `train ∪ dev` = 1,109 claims — **not** over `train` alone |
 | Archive | sha256 `11c62128…76be`, 3.1 MB |
 
+## Division of labour (amended 2026-09-11 — read this before assigning work)
+
+Mounir prefers explanation in chat over producing written artifacts. **Claude writes all
+documentation**, including ADRs and `docs/concepts/`. `docs/LEARNING_LOG.md` has been deleted.
+This was raised, argued once, and decided — **do not re-propose it.**
+
+Still Mounir's, unchanged: reading the data by hand, `docs/EVALUATION.md`, the metric
+implementations, and the abstention threshold.
+
 ## Next
 
-- [ ] **ADR-0001** — dev environment decision (Mounir writes; do not generate)
+- [x] **ADR-0001** — dev environment decision (written by Claude)
 - [ ] **Stage 0 (Mounir, by hand, no code):** read real claims, abstracts, evidence annotations
 - [ ] **Checkpoint 1 teaching:** valid splits, dev/test separation, leakage in retrieval
 - [ ] **`docs/EVALUATION.md` — Mounir writes.** Gate: nothing in Stage 1 is built before this

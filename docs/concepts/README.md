@@ -6,6 +6,17 @@ One file per concept: `NN-short-name.md`. Written by Claude, kept because readin
 explanation a second time — after having used the thing — lands differently than reading
 it the first time.
 
+Since 2026-09-11 this directory also absorbs what `docs/LEARNING_LOG.md` used to hold: bugs
+worth knowing by class, and things learned along the way. That file was deleted at Mounir's
+request. Explanation happens in chat; this is where it is kept for re-reading.
+
+## Written so far
+
+| # | File | Covers |
+|---|---|---|
+| 01 | `01-pull-requests-and-reading-a-diff.md` | What a PR is, why review alone, the four-pass reading method, merge strategies |
+| 02 | `02-three-bug-classes.md` | Wrong-shell expansion, path mangling at boundaries, silent wrong-shape extraction, unanchored gitignore |
+
 ## Checkpoints (from PART III of the plan)
 
 Each of these is a stop-and-teach gate. A checkpoint is passed when Mounir can explain it
