@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # The dev loop runs on Windows; the deployment target is Linux (see ADR-0001).
+    # Running the matrix on both is how that decision is instrumented rather than
+    # merely hoped about: an OS-divergence bug shows up here, on a PR, instead of
+    # at Stage 6 when Docker arrives.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Sync dependencies
+        run: uv sync --locked --all-groups
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Type check
+        run: uv run mypy
+
+      - name: Test
+        # SciFact data is not committed, so data-dependent tests are deselected here.
+        # This is a real gap in the gate and is recorded as such rather than hidden:
+        # CI proves the code imports, types and passes unit tests. It does not prove
+        # any measured result. Reproducing results is the download script's job.
+        run: uv run pytest -m "not needs_data"

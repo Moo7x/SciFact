@@ -1,0 +1,78 @@
+{
+  "source_url": "https://scifact.s3-us-west-2.amazonaws.com/release/latest/data.tar.gz",
+  "downloaded_at": "2026-09-10T17:15:15.202812+00:00",
+  "archive_sha256": "11c621288d41ac144d29b13b0f8503b3820b7d6e8b1f6ff24dff335c196d76be",
+  "archive_bytes": 3115079,
+  "files": {
+    "claims_dev.jsonl": {
+      "sha256": "86f0435d08fdb65d1aa41d1472684f57e6e71930626497bdf4d7a9ec1a632217",
+      "bytes": 65007,
+      "records": 300
+    },
+    "claims_test.jsonl": {
+      "sha256": "558930d75215c73f84a28fe538307d6d397c9de1ec7239514cf45f80d75d2ca3",
+      "bytes": 33769,
+      "records": 300
+    },
+    "claims_train.jsonl": {
+      "sha256": "f4c8fa82d8bd0653a9cc8d61a6ea48c25eacea64e90af5dbf390ebb1b74372f0",
+      "bytes": 175616,
+      "records": 809
+    },
+    "corpus.jsonl": {
+      "sha256": "b8d6c89624cb2ed74dee8938effc4f5d8bd2086887880af8110d64be4ceade62",
+      "bytes": 8307875,
+      "records": 5183
+    },
+    "cross_validation/fold_1/claims_dev_1.jsonl": {
+      "sha256": "e30aaab11fbc94580514c83fe3778b76cac0b1b981f3fe941d7b4a33005e5653",
+      "bytes": 47736,
+      "records": 222
+    },
+    "cross_validation/fold_1/claims_train_1.jsonl": {
+      "sha256": "32922d3690b6e867589ed9c672c00115eea7295845c91d13747ef07fa6fb3996",
+      "bytes": 192887,
+      "records": 887
+    },
+    "cross_validation/fold_2/claims_dev_2.jsonl": {
+      "sha256": "1db8e51cfa04f680ce6d256096ffe336ee74f1640f836e4d2bc0c711fb312f03",
+      "bytes": 48999,
+      "records": 222
+    },
+    "cross_validation/fold_2/claims_train_2.jsonl": {
+      "sha256": "6d8ad6881a7d50cd05aad1baf62d68d68ae3168fe5e3049549bc430ffd7f09a3",
+      "bytes": 191624,
+      "records": 887
+    },
+    "cross_validation/fold_3/claims_dev_3.jsonl": {
+      "sha256": "25f3b19510216350db45cfd469a7d8c6131f948c7ce70976f01d6126682ee745",
+      "bytes": 48594,
+      "records": 222
+    },
+    "cross_validation/fold_3/claims_train_3.jsonl": {
+      "sha256": "8b16b208d9b42cbf882d480531090b23025689077f78aee60b6434a73c8b3d8b",
+      "bytes": 192029,
+      "records": 887
+    },
+    "cross_validation/fold_4/claims_dev_4.jsonl": {
+      "sha256": "f6c91c02854739b476b145160c47beb9a123607da58b33b7ea240e0d51209142",
+      "bytes": 47912,
+      "records": 222
+    },
+    "cross_validation/fold_4/claims_train_4.jsonl": {
+      "sha256": "11444b9365c72eb6b497dc1a068ad11fa691e5c94cab2249b8969430704f0608",
+      "bytes": 192711,
+      "records": 887
+    },
+    "cross_validation/fold_5/claims_dev_5.jsonl": {
+      "sha256": "a210668e95a02d8b2b67f2592db517476e22d6175309e5d643f2bf01eed5c97b",
+      "bytes": 47382,
+      "records": 221
+    },
+    "cross_validation/fold_5/claims_train_5.jsonl": {
+      "sha256": "859ac5af4b2703d8feab737315b0d12c59d7cbc4c4265852a2c3f9dc93ef1177",
+      "bytes": 193241,
+      "records": 888
+    }
+  }
+}
