@@ -22,6 +22,23 @@ Repository scaffolded. No data downloaded yet. No code that computes anything ye
       — ADR pending, **author: Mounir**
 - [x] Toolchain green: `uv` venv, ruff, mypy `strict`, pytest — all passing locally
 - [x] SciFact downloaded and checksummed. `data/MANIFEST.json` committed, data gitignored
+- [x] `scripts/peek.py` — read claims and gold evidence by hand
+- [x] PR #1 open, CI green on both `ubuntu-latest` and `windows-latest`
+
+## GPU note (checked 2026-09-11, so it is not re-litigated later)
+
+No CUDA toolkit is installed and **none is needed** — PyTorch wheels bundle their own CUDA
+runtime; only the driver matters, and 546.80 / CUDA 12.3 already supports cu121 and cu124.
+Existing `torch 2.11.0+cpu` is a CPU build. Stage 3 needs one `uv add` against the PyTorch
+index, nothing more.
+
+Torch is deferred not for disk reasons but because Stages 0–2 have no GPU consumer
+(PART IV: a tool's milestone must demonstrate something specific).
+
+**The real Stage 3 ceiling is 4 GB VRAM.** fp32 Adam costs ~16 bytes/parameter before
+activations (4 weights + 4 grads + 8 Adam moments): ~22 M params ≈ 0.35 GB (comfortable),
+~110–184 M ≈ 1.8–2.9 GB (needs AMP and gradient accumulation), ≥300 M ≈ 4.8 GB (over budget
+before a single activation). To be measured, not trusted.
 
 ## Measured (the only numbers in this repo so far — all counts, no results)
 

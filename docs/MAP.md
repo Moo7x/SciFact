@@ -4,7 +4,8 @@ For cold sessions. Keep it current; a stale map is worse than no map.
 
 | Module | Purpose | Status |
 |---|---|---|
-| `scripts/download_data.py` | Fetch SciFact into `data/` (gitignored). Reproducible and verified. | scaffolded |
+| `scripts/download_data.py` | Fetch SciFact into `data/` (gitignored). Reproducible and verified. | working |
+| `scripts/peek.py` | Display claims with gold evidence marked, for reading by hand. Displays only — never summarises. | working |
 | `src/scifact/data/` | Loading, schemas, typed access to claims and corpus | empty |
 | `src/scifact/retrieval/` | BM25, dense retrieval, reranking | empty |
 | `src/scifact/eval/` | Metrics and harness. **Metric bodies are Mounir's to write.** | empty |
