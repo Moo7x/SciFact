@@ -1,0 +1,38 @@
+# --- SciFact data: never committed. Reproduce with scripts/download_data.py ---
+data/
+!data/.gitkeep
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# --- Tooling caches ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# --- Experiment tracking / artifacts ---
+mlruns/
+mlartifacts/
+outputs/
+*.faiss
+*.index
+checkpoints/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
