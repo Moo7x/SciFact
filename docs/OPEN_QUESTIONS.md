@@ -80,3 +80,37 @@ documents are not guaranteed negatives, which means precision is not straightfor
 computable here. This is `docs/EVALUATION.md` territory.
 
 **Owner:** Mounir.
+
+## OQ-004 — A positional baseline is mandatory before any BM25 number means anything — OPEN
+
+**Raised:** 2026-09-16 (Claude), from a measurement prompted by Mounir's observation that
+evidence tends to be the concluding sentence.
+
+Measured on train: ~80% of gold evidence sentences sit in the **back half** of their abstract
+(21.5% in the final tenth alone). Only 15.4% of rationales include the literal last sentence,
+so the effect is a strong skew rather than a rule.
+
+**Consequence.** A "retriever" that ignores the claim entirely and returns the last two
+sentences of each cited abstract would score well above chance. Any BM25 recall@k reported
+without that comparison is uninterpretable: it cannot be told apart from the positional prior.
+
+A baseline exists to absorb the credit that does not belong to your method. This one is not
+optional.
+
+**Owner:** Mounir — it belongs in `docs/EVALUATION.md` as a required comparison condition.
+Claude states the requirement; what the baseline is exactly, and what it must beat, is protocol.
+
+## OQ-005 — Do sentence-segmentation errors split real evidence? — OPEN
+
+**Raised:** 2026-09-16 (Claude), from Mounir's observation that related lines get split apart.
+
+Abstracts arrive pre-segmented by an automatic splitter that breaks on punctuation, not
+meaning. 98.3% of rationales are contiguous, but the median rationale is one sentence, so most
+of that contiguity is trivial.
+
+**The unmeasured risk:** if the splitter cut one logical statement across two lines and only
+one is annotated, a retriever that finds the annotated sentence still holds half the
+justification — and would be scored as fully correct. That inflates sentence-level recall
+relative to what a reader would accept.
+
+Not yet quantified. Requires deciding what counts as a bad split first, which is protocol.

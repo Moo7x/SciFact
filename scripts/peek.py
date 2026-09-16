@@ -65,8 +65,12 @@ def show(claim: dict[str, Any], corpus: dict[int, dict[str, Any]]) -> None:
         annotations = evidence.get(str(doc_id), [])
         marked: dict[int, list[str]] = {}
         for ann in annotations:
-            for idx in ann.get("sentence_indices", []):
-                marked.setdefault(idx, []).append(ann.get("label", "?"))
+            # NOT `.get("sentence_indices", [])`. The real key is `sentences`, and `.get` with
+            # a default silently returned [] for every rationale in the dataset -- this viewer
+            # displayed 505 annotated claims with nothing marked and never raised.
+            # See src/scifact/data/schema.py.
+            for idx in ann["sentences"]:
+                marked.setdefault(idx, []).append(ann["label"])
 
         status = "ANNOTATED" if annotations else "cited, no rationale annotated"
         print(f"\n  {'-' * (WIDTH - 4)}")
