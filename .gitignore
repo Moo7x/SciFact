@@ -1,6 +1,20 @@
 # --- SciFact data: never committed. Reproduce with scripts/download_data.py ---
-data/
-!data/.gitkeep
+#
+# Two subtleties, both learned by getting them wrong first:
+#
+# 1. LEADING SLASH. An unanchored `data/` matches a directory named `data` at *any* depth,
+#    which silently swallowed `src/scifact/data/`. A source file missing from the repo but
+#    present on disk passes locally and fails on a fresh clone in CI, with an ImportError
+#    that points nowhere near the cause. `/data/` anchors the pattern to the repo root.
+#
+# 2. `/*` NOT `/`. Git does not descend into an excluded *directory*, so a negation inside
+#    one can never take effect. Excluding the directory's *contents* keeps it traversable
+#    and lets the exceptions below actually fire.
+/data/*
+!/data/.gitkeep
+# The manifest IS committed. The data is not, so the manifest is the only record of *which*
+# data produced a given result. Without it, "re-run the download script" is not reproduction.
+!/data/MANIFEST.json
 
 # --- Secrets ---
 .env

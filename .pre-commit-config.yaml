@@ -1,0 +1,28 @@
+# Formatting must never reach code review. A reviewer spending attention on whitespace
+# is a reviewer not spending it on the change.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-added-large-files
+        # SciFact data must never be committed. This is the mechanical backstop
+        # behind the .gitignore rule, because .gitignore only protects you until
+        # somebody types `git add -f`.
+        args: [--maxkb=512]
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Must match the ruff version uv resolves for the dev group. If these drift, pre-commit
+    # and CI disagree about formatting and every PR gets a spurious diff.
+    rev: v0.16.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
