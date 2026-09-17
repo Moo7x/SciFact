@@ -114,3 +114,51 @@ justification — and would be scored as fully correct. That inflates sentence-l
 relative to what a reader would accept.
 
 Not yet quantified. Requires deciding what counts as a bad split first, which is protocol.
+
+## OQ-006 — Retrieval score is a weak abstention signal; what replaces it? — OPEN
+
+**Raised:** 2026-09-17 (Claude), from Mounir's observation that NOT_ENOUGH_INFO abstracts
+share the claim's keywords while discussing a different question.
+
+Measured on train (`scripts/analyze_negatives.py`, seed 0):
+
+| Condition | n | mean claim-vocabulary coverage |
+|---|---|---|
+| has evidence | 564 | 62% |
+| NOT_ENOUGH_INFO (cited) | 330 | 32% |
+| random abstract | 809 | 5% |
+
+NEI sits ~47% of the way from random to evidence. Crude lexical ranking puts **58.4% of NEI
+cited abstracts in the top 10** of all 5,183, and 24.8% at rank 1.
+
+Separability of the two labelled groups on that signal alone: **AUC 0.858**, best
+single-threshold accuracy 78.3% against a 63.1% majority-class floor.
+
+**The consequence.** The obvious abstention rule — *"abstain when the top retrieval score is
+low"* — inherits an 86%-reliable discriminator as its ceiling, because the negatives are
+high-scoring by construction. It is not useless signal, but it is not calibration either.
+
+**The question:** what signal does the abstention decision actually use, and how is it
+calibrated? This is Stage 5 and Checkpoint 6, surfaced early because it constrains what Stage 2's
+classifier must output — a score that can be calibrated, not just an argmax.
+
+**Owner:** Mounir. Claude reports the separability; choosing the operating point is protocol.
+
+## OQ-007 — Are the NEI cited documents usable as guaranteed hard negatives? — OPEN
+
+**Raised:** 2026-09-17 (Claude).
+
+The project plan warns: *"Unannotated retrieved documents are not guaranteed negatives — they
+may be relevant but unlabelled. Treating them as negatives corrupts training and evaluation
+both."*
+
+The NEI cited documents are different: a human annotated them as carrying no evidence for that
+claim. They appear to be genuine labelled negatives, and 304 of them ship in the training split
+— which would remove the need for hard-negative mining in Stage 3 entirely.
+
+**Unverified:** whether the SciFact annotation process guarantees this, or whether "no evidence
+annotated" can also mean "not examined." Requires reading Wadden et al. 2020 on how NEI claims
+were constructed, **not** inferring it from the files.
+
+**Blocks:** Stage 3 training data construction. Getting this wrong springs exactly the trap the
+plan names.

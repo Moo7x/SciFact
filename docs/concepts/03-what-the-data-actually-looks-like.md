@@ -122,7 +122,7 @@ the dense retriever in Stage 3 should earn its keep.
 Every number above was initially **zero**, because both scripts read the evidence with:
 
 ```python
-rationale.get("sentence_indices", [])   # wrong key
+rationale.get("sentence_indices", [])  # wrong key
 ```
 
 The real key is `sentences`. `.get()` with a default turned a typo into an empty list, silently,
