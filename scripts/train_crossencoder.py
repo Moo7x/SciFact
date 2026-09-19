@@ -161,6 +161,18 @@ def main() -> int:
     parser.add_argument(
         "--no-class-weights", action="store_true", help="disable inverse-frequency weighting"
     )
+    parser.add_argument(
+        "--max-negatives",
+        type=int,
+        default=2,
+        help="negatives sampled per claim. At the default of 2, every SUPPORT example "
+        "ships with two near-identical counterexamples from the SAME abstract, 2:1 "
+        "against it. OQ-010 asks whether that, rather than class weighting, caused the "
+        "SUPPORT collapse.",
+    )
+    parser.add_argument(
+        "--tag", default="crossencoder", help="output subdirectory, so arms do not overwrite"
+    )
     args = parser.parse_args()
 
     set_seed(args.seed)
@@ -168,8 +180,13 @@ def main() -> int:
 
     corpus = load_corpus(DATA_DIR / "corpus.jsonl")
     fit, tune = split_train(load_claims(DATA_DIR / "claims_train.jsonl"))
-    train_pairs = build_pairs(fit, corpus, seed=args.seed)
-    tune_pairs = build_pairs(tune, corpus, seed=args.seed)
+    train_pairs = build_pairs(
+        fit, corpus, max_negatives_per_claim=args.max_negatives, seed=args.seed
+    )
+    # Tune pairs keep the DEFAULT sampling in every arm. If the evaluation set changed
+    # with the training set, the two arms would be scored on different problems and the
+    # comparison would be meaningless.
+    tune_pairs = build_pairs(tune, corpus, max_negatives_per_claim=2, seed=args.seed)
 
     if args.smoke:
         train_pairs, tune_pairs = train_pairs[:320], tune_pairs[:96]
@@ -340,12 +357,14 @@ def main() -> int:
                 f"(tune loss {best_loss:.4f}), not the final step {step}"
             )
             model.load_state_dict(best_state)
-        out = OUT_DIR / "crossencoder"
+        out = OUT_DIR / args.tag
         model.save_pretrained(out)
         tokenizer.save_pretrained(out)
-        (OUT_DIR / "train_history.json").write_text(json.dumps(history, indent=2), encoding="utf-8")
+        (OUT_DIR / f"train_history_{args.tag}.json").write_text(
+            json.dumps(history, indent=2), encoding="utf-8"
+        )
         print(f"\n  saved -> {out}")
-        print(f"  history -> {OUT_DIR / 'train_history.json'}")
+        print(f"  history -> {OUT_DIR / f'train_history_{args.tag}.json'}")
     return 0
 
 
