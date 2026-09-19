@@ -62,6 +62,19 @@ not compute the metric.
 Recall is undefined when there is nothing to retrieve. The 37.6% with no evidence are the
 abstention problem and are scored in Stage 5, never folded into a retrieval number.
 
+## 3b. Macro-recall is required alongside accuracy (added 2026-09-19)
+
+Any classification result must report **per-class recall and their unweighted mean**, not
+accuracy alone.
+
+Learned the hard way in Stage 3. The fine-tuned cross-encoder's first number was 66.9% pair
+accuracy against a 65.4% majority floor -- unremarkable but not alarming. Per-class recall
+showed it had abandoned a class entirely: SUPPORT 21.6%, and 0.0% at any confidence threshold.
+Accuracy on an imbalanced problem rewards a model for concentrating on the common class, which
+is the opposite of what this project needs.
+
+Report both. Where they disagree, macro-recall is the one to believe.
+
 ## 4. Uncertainty is mandatory
 
 Every reported figure carries a 95% percentile bootstrap interval, 2,000 resamples, resampling

@@ -61,6 +61,18 @@ python_version = "3.12"
 strict = true
 files = ["src", "scripts", "tests"]
 
+# torch and transformers ship incomplete type stubs, so `--strict` flags every call into them
+# as "untyped call in typed context". Relaxing four rules for the two torch-facing scripts
+# keeps strict checking everywhere it can still catch something. The alternative -- scattering
+# `# type: ignore` until the noise stops -- suppresses real errors along with the noise.
+# src/ stays fully strict, including src/scifact/verify/crossencoder.py.
+[[tool.mypy.overrides]]
+module = ["train_crossencoder", "eval_stage3"]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_any_generics = false
+warn_return_any = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"

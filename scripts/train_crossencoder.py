@@ -29,6 +29,7 @@ import random
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
@@ -52,7 +53,7 @@ MAX_LENGTH = 256  # claim + one evidence sentence; p95 of that pair fits well in
 
 
 class PairDataset(Dataset[dict[str, torch.Tensor]]):
-    def __init__(self, pairs: list[Pair], tokenizer, max_length: int) -> None:
+    def __init__(self, pairs: list[Pair], tokenizer: Any, max_length: int) -> None:
         self.pairs = pairs
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -108,7 +109,10 @@ def class_weights(pairs: list[Pair], device: torch.device) -> torch.Tensor:
 
 @torch.no_grad()
 def evaluate(
-    model, loader: DataLoader, device: torch.device, weights: torch.Tensor | None
+    model: Any,
+    loader: DataLoader,
+    device: torch.device,
+    weights: torch.Tensor | None,
 ) -> tuple[float, float, dict]:
     """Return (mean loss, accuracy, per-class recall). No gradients: eval must not train."""
     model.eval()

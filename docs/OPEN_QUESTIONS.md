@@ -182,7 +182,7 @@ retrieved evidence would have reported 42.4% and hidden the pathology entirely.
 **A negative decomposition cost is diagnostic, not a bug:** it means the model is not responding
 to evidence quality at all.
 
-## OQ-008 — Does a cross-encoder actually fix the polarity failure? — OPEN
+## OQ-008 — Does a cross-encoder actually fix the polarity failure? — ANSWERED 2026-09-19: YES, and it broke SUPPORT
 
 **Raised:** 2026-09-19 (Claude), from the Stage 2 result.
 
@@ -282,3 +282,59 @@ claims separately. A large gap quantifies reading 1; no gap supports reading 2. 
 the pooled number makes the question unanswerable.
 
 Not yet done. Blocks any dev evaluation.
+
+---
+
+## OQ-008 resolution (2026-09-19) — yes for CONTRADICT, at the cost of SUPPORT
+
+CONTRADICT recall 11-16% (lexical) -> 84-88% (cross-encoder). The representational diagnosis was
+right: attention over the pair can encode negation scope where a bag of words cannot.
+
+But SUPPORT recall collapsed to 21.6%, and to **0.0%** at any confidence threshold above 0.5.
+73 of 125 SUPPORT pairs are predicted CONTRADICT. The model effectively learned two classes.
+
+Full write-up: `docs/concepts/07-stage-3-the-model-collapsed-support.md`.
+
+## OQ-010 — Which caused the SUPPORT collapse: class weighting or negative sampling? — OPEN
+
+**Raised:** 2026-09-19 (Claude). Both causes are mine, and they are separable by experiment.
+
+**Cause A — class weighting overshot.** Weights SUPPORT 1.59, CONTRADICT 1.90, NEI 0.54.
+CONTRADICT is rarest so it got the largest weight; the model went from ignoring it to
+over-claiming it. CONTRADICT precision is 35%.
+
+**Cause B — negative sampling drowns SUPPORT.** `build_pairs` emits, per evidence-bearing claim,
+one positive (the gold rationale sentence) and **two** negatives drawn from *the same abstract*.
+Every SUPPORT example therefore ships with two near-identical counterexamples -- same claim,
+same abstract, adjacent prose -- labelled NEI, 2:1 against it. CONTRADICT does not suffer this,
+because a negated claim carries an explicit polarity flip that no same-abstract negative mimics.
+
+**The experiment**, two runs, changing one thing each:
+
+1. `--no-class-weights` -- isolates cause A.
+2. `--max-negatives 1` -- isolates cause B (requires exposing that argument).
+
+Two configurations, not twenty-five: at sigma ~= 4pp on n=162, selection inflation at m=2 is
+about 1.6pp, small enough that a real effect should survive it.
+
+**Prediction on record, so it can be wrong:** cause B dominates. Weighting shifts a decision
+boundary, which a threshold can partly undo; a 2:1 ratio of near-identical contradictory
+training signal is a harder thing for the model to recover from.
+
+## OQ-011 — Is the model's under-confidence a calibration problem or a capacity problem? — OPEN
+
+**Raised:** 2026-09-19 (Claude).
+
+At tau = 0.70 the model abstains on **everything**: not one sentence across 162 claims reaches
+0.70 confidence on a directional call. Its probability mass never concentrates.
+
+Two readings, and they need different fixes:
+
+1. **Calibration.** Weighted cross-entropy distorts the output distribution away from the true
+   priors -- a cost recorded when the weighting was added. Temperature scaling on `train_tune`
+   would test this cheaply.
+2. **Capacity or genuine difficulty.** 22.7M parameters on 2,196 examples of a task requiring
+   scientific-negation reasoning. The model may be correctly uncertain.
+
+Distinguishing them matters for Stage 5: a threshold cannot be "the calibrated operating point"
+if the scores underneath it are not calibrated at all.
