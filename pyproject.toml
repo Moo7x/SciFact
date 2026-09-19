@@ -7,7 +7,10 @@ readme = "README.md"
 # has ever run on 3.11, and CI does not test it. Widen this when something actually
 # exercises the older version.
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "torch>=2.14.0",
+    "transformers>=5.17.0",
+]
 
 # Dependencies are added when a stage needs them, not upfront.
 # Stage 0 and the download script are stdlib-only by design: the first thing that runs
@@ -64,3 +67,14 @@ addopts = "-q --strict-markers"
 markers = [
     "needs_data: requires the SciFact corpus to be downloaded (skipped in CI)",
 ]
+
+# --- Stage 3: cross-encoder fine-tuning -------------------------------------
+# CPU-only torch. The CUDA wheel is ~2.5 GB against 27 GB free, and nothing before
+# Stage 3 has a GPU consumer. Switch the index to cu124 when GPU training is wanted.
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

@@ -144,7 +144,7 @@ classifier must output — a score that can be calibrated, not just an argmax.
 
 **Owner:** Mounir. Claude reports the separability; choosing the operating point is protocol.
 
-## OQ-007 — Are the NEI cited documents usable as guaranteed hard negatives? — OPEN
+## OQ-007 — Are the NEI cited documents usable as guaranteed hard negatives? — ANSWERED 2026-09-19: YES
 
 **Raised:** 2026-09-17 (Claude).
 
@@ -197,3 +197,88 @@ reasoning.
 
 Stage 3 must report CONTRADICT recall specifically, not just overall accuracy -- overall accuracy
 can improve while the actual failure is untouched, because SUPPORT dominates.
+
+---
+
+## OQ-007 resolution (2026-09-19) — confirmed by reading the paper
+
+Wadden et al. 2020, section 3.3, read directly rather than inferred from the files:
+
+> "For each claim, all of the claim's cited abstracts are annotated for evidence. Annotators are
+> shown a single claim - cited abstract pair, and asked to label the pair as SUPPORTS, REFUTES,
+> or NOINFO." ... "Overall, the annotators found evidence in 63% of cited abstracts."
+
+**A human read every cited abstract and judged it.** NOINFO means "examined and found to contain
+no evidence", not "not examined". These are genuine labelled negatives.
+
+The paper's own baseline uses them the same way (section 5):
+
+> "For each claim, we use cited abstracts labeled NOINFO, as well as non-rationale sentences from
+> abstracts labeled SUPPORTS and REFUTES as negative examples."
+
+**Cleared for use as hard negatives in Stage 3.** The plan's trap — unannotated retrieved
+documents are not guaranteed negatives — still applies to everything else the retriever surfaces.
+
+### Two things found while reading that were not asked about
+
+**1. CONTRADICT claims are negations of SUPPORT claims** (section 3.2):
+
+> "To obtain examples where an abstract REFUTES a claim, an NLP expert wrote negations of
+> existing claims, taking precautions not to bias the negations by using obvious keywords like
+> not."
+
+This explains the Stage 2 result exactly. CONTRADICT recall was 11-16% for the lexical verifier
+because a negated claim shares almost every content word with its original **by construction**.
+The dataset was deliberately built so that lexical overlap cannot solve it. That was not a
+weakness of the heuristic; it was the dataset working as designed.
+
+**2. The corpus contains deliberate distractors** (section 3.1):
+
+> "we identify five papers cited in the same paper as each source citance but in a different
+> paragraph, and add these to the corpus as distractor abstracts."
+
+Which explains OQ-006: NEI abstracts are topically adjacent because topically adjacent abstracts
+were added on purpose.
+
+## OQ-009 — Negation twins are split across train and dev — OPEN, and serious
+
+**Raised:** 2026-09-19 (Claude), following from the negation procedure above.
+
+If an expert wrote negations of existing claims, the original and its negation can land in
+different splits. Measured by claim-token Jaccard between every dev claim and every train claim:
+
+| Jaccard threshold | dev claims with a train twin |
+|---|---|
+| >= 0.6 | 116 / 300 (38.7%) |
+| >= 0.7 | 91 / 300 (30.3%) |
+| >= 0.8 | 69 / 300 (23.0%) |
+| >= 0.9 | 14 / 300 (4.7%) |
+
+**Every example inspected cites the same documents as its twin.** Real cases:
+
+```
+jaccard=0.80  DEV   [NEI]        A deficiency of vitamin B12 increases blood levels of homocysteine.
+              TRAIN [NEI]        A deficiency of vitamin B12 decreases blood levels of homocysteine.
+
+jaccard=0.71  DEV   [CONTRADICT] A high microerythrocyte count raises vulnerability to severe anemia...
+              TRAIN [SUPPORT]    A high microerythrocyte count protects against severe anemia...
+```
+
+Same abstract, one word different, opposite labels, opposite sides of the split.
+
+**Why it matters.** A cross-encoder is trained on (claim, abstract) pairs. For roughly a quarter
+of dev, it has already seen that exact abstract during training, paired with a nearly identical
+claim. That is textbook near-duplicate contamination, and it sits inside the split this project
+designated as its only clean holdout (see `docs/EVALUATION.md` section 1).
+
+**Two readings, and it is not obvious which dominates:**
+
+1. *Contamination.* The model may have memorised the abstract, so dev overstates generalisation.
+2. *Deliberate probe.* Splitting the pair forces the model to attend to the polarity word rather
+   than memorise the abstract — arguably the hardest and most informative test in the dataset.
+
+**Required, either way:** every dev result must be reported **twice** — on twinned and untwinned
+claims separately. A large gap quantifies reading 1; no gap supports reading 2. Reporting only
+the pooled number makes the question unanswerable.
+
+Not yet done. Blocks any dev evaluation.
