@@ -7,7 +7,7 @@ Status key: **OPEN** / **ANSWERED** (with date and where the answer lives) / **D
 
 ---
 
-## OQ-001 — Stage 2 cannot decompose failure as written — OPEN
+## OQ-001 — Stage 2 cannot decompose failure as written — ANSWERED 2026-09-19
 
 **Raised:** 2026-09-11 (Claude)
 
@@ -162,3 +162,38 @@ were constructed, **not** inferring it from the files.
 
 **Blocks:** Stage 3 training data construction. Getting this wrong springs exactly the trap the
 plan names.
+
+---
+
+## OQ-001 resolution (2026-09-19)
+
+Answered by `src/scifact/eval/decomposition.py` and written up in
+`docs/concepts/06-stage-2-failure-decomposition.md`.
+
+Three conditions, varying one source of error at a time: oracle sentences, oracle abstract,
+retrieved@k. `A - B` is the cost of sentence selection, `B - C` the cost of document retrieval.
+Conditions A and B are defined only for the 505 evidence-bearing claims, because NOT_ENOUGH_INFO
+has no gold rationale to hand over and substituting `cited_doc_ids` would leak the answer.
+
+The first run immediately earned its keep: the decomposition costs came out **negative** for the
+lexical verifier (27.5% with oracle sentences, 42.4% with retrieved evidence). A single run over
+retrieved evidence would have reported 42.4% and hidden the pathology entirely.
+
+**A negative decomposition cost is diagnostic, not a bug:** it means the model is not responding
+to evidence quality at all.
+
+## OQ-008 — Does a cross-encoder actually fix the polarity failure? — OPEN
+
+**Raised:** 2026-09-19 (Claude), from the Stage 2 result.
+
+The lexical verifier scores 11-16% recall on CONTRADICT. The diagnosis is representational:
+"treatment reduced mortality" and "treatment did not reduce mortality" share nearly every
+content word and every cue word, so a bag of words cannot separate them.
+
+That diagnosis predicts a cross-encoder should help substantially, since attention over the pair
+can represent negation scope. **It is a prediction, not a result.** Contamination is a live
+confound: SciFact has been public since 2020, so a pretrained model may be recalling rather than
+reasoning.
+
+Stage 3 must report CONTRADICT recall specifically, not just overall accuracy -- overall accuracy
+can improve while the actual failure is untouched, because SUPPORT dominates.
