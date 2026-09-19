@@ -146,6 +146,13 @@ def main() -> int:
     parser.add_argument("--max-grad-norm", type=float, default=1.0)
     parser.add_argument("--seed", type=int, default=20260919)
     parser.add_argument("--log-every", type=int, default=10)
+    parser.add_argument(
+        "--eval-every",
+        type=int,
+        default=35,
+        help="steps between tune-set evaluations. Evaluating only at epoch ends gives 3 "
+        "points on the curve, which is too few to tell a plateau from a peak.",
+    )
     parser.add_argument("--smoke", action="store_true", help="20 steps, to verify plumbing")
     parser.add_argument(
         "--no-class-weights", action="store_true", help="disable inverse-frequency weighting"
@@ -224,6 +231,14 @@ def main() -> int:
     step = 0
     t0 = time.perf_counter()
 
+    # Track the best checkpoint by tune loss. Saving the FINAL model assumes the last step
+    # is the best one, which is exactly false whenever the model starts overfitting -- and
+    # with 2,196 examples against 22.7M parameters that is the expected outcome, not an
+    # edge case. Without this the script would quietly ship a worse model than it found.
+    best_loss = float("inf")
+    best_step = 0
+    best_state: dict[str, torch.Tensor] | None = None
+
     weights = None if args.no_class_weights else class_weights(train_pairs, device)
     if weights is not None:
         pretty = "  ".join(f"{ID_TO_LABEL[i]}={weights[i]:.2f}" for i in range(len(weights)))
@@ -264,6 +279,28 @@ def main() -> int:
                 )
                 history.append({"step": step, "train_loss": window, "grad_norm": grad_norm})
 
+            if step % args.eval_every == 0 and not args.smoke:
+                ev_loss, ev_acc, ev_rec = evaluate(model, tune_loader, device, weights)
+                flag = ""
+                if ev_loss < best_loss:
+                    best_loss, best_step = ev_loss, step
+                    best_state = {
+                        k: v.detach().cpu().clone() for k, v in model.state_dict().items()
+                    }
+                    flag = "  <- best so far"
+                print(
+                    f"      [eval] step {step:>4}  tune loss {ev_loss:.4f}  acc {ev_acc:.1%}"
+                    f"  CONTRADICT recall {ev_rec['CONTRADICT']:.1%}{flag}"
+                )
+                history.append(
+                    {
+                        "step": step,
+                        "tune_loss": ev_loss,
+                        "tune_acc": ev_acc,
+                        **{f"recall_{k}": v for k, v in ev_rec.items()},
+                    }
+                )
+
             if args.smoke and step >= 20:
                 break
         if args.smoke and step >= 20:
@@ -293,6 +330,12 @@ def main() -> int:
     print(f"  {step} steps in {elapsed:.1f}s ({elapsed / max(1, step):.2f}s/step)")
 
     if not args.smoke:
+        if best_state is not None:
+            print(
+                f"\n  restoring best checkpoint: step {best_step} "
+                f"(tune loss {best_loss:.4f}), not the final step {step}"
+            )
+            model.load_state_dict(best_state)
         out = OUT_DIR / "crossencoder"
         model.save_pretrained(out)
         tokenizer.save_pretrained(out)
