@@ -54,7 +54,9 @@ def main() -> int:
     print("=" * 74)
     for tag, extra, why in ARMS:
         print(f"  {tag:<12} {' '.join(extra) or '(defaults)':<28} {why}")
-    print("\n  ~40 min per arm on CPU. Total roughly 2 hours.")
+    print("\n  ~3 min per arm on GPU (~40 on CPU). All three arms re-run so they share a device:")
+    print("  the same seed on CPU vs GPU gives slightly different numbers, which would otherwise")
+    print("  be a second variable hiding inside the comparison.")
     print("  Each arm writes outputs/<tag>/ and outputs/train_history_<tag>.json\n")
 
     t0 = time.perf_counter()
