@@ -81,12 +81,15 @@ markers = [
 ]
 
 # --- Stage 3: cross-encoder fine-tuning -------------------------------------
-# CPU-only torch. The CUDA wheel is ~2.5 GB against 27 GB free, and nothing before
-# Stage 3 has a GPU consumer. Switch the index to cu124 when GPU training is wanted.
+# CUDA 12.6 build (switched from CPU on 2026-09-26 once repeated training runs made it pay).
+# Driver 546.80 officially supports CUDA 12.3; cu126 runs under CUDA minor-version
+# compatibility -- verified, not assumed: torch.cuda.is_available() is True and training
+# runs at 0.44 s/step vs 5.4 s/step on CPU. cu130 is NOT an option on this driver
+# (needs a CUDA 13 driver). CI runners have no GPU and fall back to CPU automatically.
 [tool.uv.sources]
-torch = { index = "pytorch-cpu" }
+torch = { index = "pytorch-cu126" }
 
 [[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
 explicit = true
