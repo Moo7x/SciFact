@@ -9,6 +9,26 @@
 
 ---
 
+## BUILDING IS PAUSED (2026-09-26) -- read before doing anything
+
+Mounir flagged, correctly, that Stages 1-3 were built faster than he learned them. He could
+explain the concepts but had never walked through the code: tokenization, Dataset/DataLoader,
+model setup, the training step. The plan's rule applies: *"If you've built three stages and I
+understand one, stop building."* Claude should have flagged this and did not.
+
+**No Stage 4 work until the lesson track below is complete.** The OQ-010 ablation (already
+running when this was decided) may finish and be analysed; nothing new gets built.
+
+| # | Lesson | Method | Status |
+|---|---|---|---|
+| 1 | Tokenization -- what the model actually receives | predict, then run | in progress |
+| 2 | Dataset / DataLoader / padding -- how pairs become batches | broken version first | |
+| 3 | Model setup -- what's inside, what the head is, tensor shapes | worked example, shapes traced | |
+| 4 | The training step | Claude writes the tests, Mounir writes the function | |
+| 5 | Device / GPU -- what `.to(device)` moves and why it errors | predict, then run | |
+
+Lessons live in `lessons/` as runnable scripts that pause between reveals.
+
 ## Where things stand
 
 Repository scaffolded. No data downloaded yet. No code that computes anything yet.
