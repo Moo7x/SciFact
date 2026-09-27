@@ -136,3 +136,35 @@ supporting evidence can look unrelated to the claim it supports, while a contrad
 **Token overlap is not meaning overlap, in either direction.** `micro` appears in both texts,
 but it comes from *microerythrocyte* in one and *microcytosis* in the other — a false match.
 `SMA` and `anemia` mean the same thing and share nothing — a false miss.
+
+---
+
+## Teach-back: what does "never unknown" cost?
+
+**Mounir's answer:** "a problem of splitting complex words even though they are real,
+unsplittable, but rare." That names the event but not the cost -- splitting is harmless in
+itself. The cost is easiest to see against the alternative design.
+
+**The alternative, a word-level vocabulary** (a word is either in the vocab or becomes `[UNK]`):
+
+```
+A high [UNK] count protects against severe [UNK] in [UNK] alpha [UNK] trait subjects
+```
+
+Four of the five words that carry the claim are gone. Every medical term becomes the same
+meaningless token.
+
+**Word-pieces trade that total loss for three smaller costs:**
+
+1. **Diluted meaning.** The model learns one vector per token. `##th` or `##ro` is shared with
+   thousands of unrelated words, so its vector means almost nothing on its own. The model has
+   to rebuild "red blood cell" from those fragments in its layers.
+2. **Inconsistency.** The same root splits differently depending on what surrounds it:
+   `erythrocyte` -> `er ##yt ##hr ##oc ##yte`, but inside `microerythrocyte` ->
+   `micro ##ery ##th ##ro ##cy ##te`. The claim and evidence of this very pair contain both
+   forms, and they share no pieces.
+3. **Length.** More tokens per word means more compute and a higher chance the evidence gets
+   truncated at `max_length`.
+
+**The trade in one line:** a word-level vocabulary loses rare words completely; word-pieces
+keep everything, at the price of fragmenting exactly the words a biomedical task most depends on.
