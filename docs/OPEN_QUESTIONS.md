@@ -338,3 +338,23 @@ Two readings, and they need different fixes:
 
 Distinguishing them matters for Stage 5: a threshold cannot be "the calibrated operating point"
 if the scores underneath it are not calibrated at all.
+
+## OQ-012 — Does the web-trained vocabulary hurt on biomedical text? — OPEN
+
+**Raised:** 2026-09-27 (Claude), from Lesson 1.
+
+The cross-encoder's tokenizer was built from MS MARCO (web search) text. On SciFact it shatters
+domain terms: `microerythrocyte` -> 6 pieces, `homozygous` -> 4, `thalassemia` -> 3. Acronyms
+lose their link to what they stand for: `SMA` (severe malarial anaemia) -> `sm ##a`, sharing no
+token with `anemia` -> `an ##emia`.
+
+**Hypothesis, not a result:** a vocabulary built from biomedical text keeps more domain terms
+whole, and a model pretrained on it would connect acronyms and paraphrases better. This could be
+part of why SUPPORT (paraphrase-heavy) collapsed while CONTRADICT (near-identical wording,
+polarity flipped) did not.
+
+**Measurable cheaply before any training:** mean tokens-per-word on SciFact claims under each
+tokenizer. If the biomedical tokenizer does not fragment noticeably less, the hypothesis dies
+there, for free.
+
+Not pursued now -- building is paused for the lesson track.
