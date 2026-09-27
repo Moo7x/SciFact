@@ -358,3 +358,51 @@ tokenizer. If the biomedical tokenizer does not fragment noticeably less, the hy
 there, for free.
 
 Not pursued now -- building is paused for the lesson track.
+
+---
+
+## OQ-010 resolution (2026-09-27) — my prediction was wrong; the real finding is a see-saw
+
+GPU runs, same seed, tune set identical across arms (547 pairs: 125 SUPPORT, 64 CONTRADICT,
+358 NEI). Best checkpoint per arm:
+
+| arm | config | SUPPORT | CONTRADICT | NEI | macro-recall |
+|---|---|---|---|---|---|
+| baseline | weights ON, 2 neg | 22.4% | 79.7% | 79.9% | 60.7% |
+| no_weights | weights OFF, 2 neg | **60.8%** | **20.3%** | 89.7% | 56.9% |
+| one_neg | weights ON, 1 neg | 14.4% | 85.9% | 74.3% | 58.2% |
+
+**The prediction on record was "one_neg moves SUPPORT more than no_weights". Wrong.** Cutting
+negatives made SUPPORT *worse* (22% -> 14%). Removing class weights moved it most (22% -> 61%).
+
+**But removing weights did not fix anything. It moved the failure.** CONTRADICT fell from 80%
+to 20% in the same run. Macro-recall is 57-61% in all three arms -- within noise of each other at
+these class sizes. So class weighting does not make the model better or worse overall. **It
+decides which of SUPPORT or CONTRADICT the model sacrifices.**
+
+The reading this points to: the model does not reliably tell SUPPORT from CONTRADICT, and where it
+cannot, a prior decides -- and the class weights set that prior. That is consistent with how the
+data was built: every CONTRADICT claim is a negation of a SUPPORT claim, scored against the same
+evidence, so separating them requires detecting the negation itself, and nothing else helps.
+
+### Two flaws in my own experiment design, stated plainly
+
+1. **Arm B was not a single-variable change.** Class weights are computed from class counts,
+   and halving the negatives changes the counts. CON/SUP weight ratio stayed at 1.77 (the
+   pressure I suspected), but NEI/SUP doubled from 0.34 to 0.69. Arm A is clean; arm B's
+   interpretation carries that confound.
+2. **Tune-loss values are not comparable across arms.** `no_weights` reports 0.588 against
+   `baseline`'s 0.798 because one is unweighted cross-entropy and the other weighted -- different
+   functions, not better and worse models. Only the recalls compare. "Best checkpoint" is also
+   chosen by a different criterion in each arm for the same reason.
+
+## OQ-013 — Does the model tell a claim from its own negation? — OPEN
+
+**Raised:** 2026-09-27 (Claude), from OQ-010.
+
+The sharpest possible test of the see-saw reading. For each SUPPORT/CONTRADICT twin pair that
+shares evidence (OQ-009 found many), check whether the model gives the two claims *different*
+predictions. If it predicts the same label for a claim and its negation, it is not reading the
+negation at all -- and no loss weighting can fix that.
+
+Cheap: inference only, no training. Deferred until the lesson track is done.
