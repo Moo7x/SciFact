@@ -9,6 +9,21 @@
 
 ---
 
+## RESUME HERE (2026-09-28)
+
+1. **Mounir runs Lesson 3** (`lessons/03_model_setup.py`, CPU, runs on battery) and answers its
+   closing question about embedding-table size and nli-deberta-v3-xsmall's 71M.
+2. **Lesson 4**: Mounir writes the training step against tests Claude writes, and applies his
+   Lesson 2 fix (pad per batch + a `collate_fn` for both DataLoaders).
+3. **Lesson 5**: GPU / `.to(device)` / mixed precision.
+4. **Stage 3b** (training): nli-MiniLM2 and PubMedBERT-MNLI-MedNLI vs the ms-marco baseline, per
+   ADR-0002. Run on Mounir's PC **plugged in**; laptop GPUs throttle on battery. **All arms on the
+   same machine**: CPU vs GPU already gave different losses at the same seed, so mixing Colab
+   and the laptop would add a hidden variable.
+5. **Pending Mounir's decisions before the repo goes public:** email visibility in commits,
+   keeping Claude co-author trailers, keeping the learning docs, and a license (Apache-2.0
+   recommended). The repo is still PRIVATE.
+
 ## BUILDING IS PAUSED (2026-09-26) -- read before doing anything
 
 Mounir flagged, correctly, that Stages 1-3 were built faster than he learned them. He could
