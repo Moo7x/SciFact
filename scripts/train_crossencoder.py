@@ -52,7 +52,7 @@ DEFAULT_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 MAX_LENGTH = 256  # claim + one evidence sentence; p95 of that pair fits well inside 256
 
 
-class PairDataset(Dataset[dict[str, torch.Tensor]]):
+class PairDataset(Dataset[dict[str, Any]]):
     def __init__(self, pairs: list[Pair], tokenizer: Any, max_length: int) -> None:
         self.pairs = pairs
         self.tokenizer = tokenizer
@@ -61,19 +61,32 @@ class PairDataset(Dataset[dict[str, torch.Tensor]]):
     def __len__(self) -> int:
         return len(self.pairs)
 
-    def __getitem__(self, i: int) -> dict[str, torch.Tensor]:
+    def __getitem__(self, i: int) -> dict[str, list[int] | int]:
+        # No padding here. Padding every pair to max_length made 74% of all computed
+        # positions padding (Lesson 2). Items stay at their natural length and each BATCH is
+        # padded to its own longest member by `make_collate` below.
         p = self.pairs[i]
-        enc = self.tokenizer(
-            p.claim,
-            p.evidence,
-            truncation=True,
-            max_length=self.max_length,
-            padding="max_length",
-            return_tensors="pt",
-        )
-        item = {k: v.squeeze(0) for k, v in enc.items()}
-        item["labels"] = torch.tensor(p.label_id, dtype=torch.long)
+        enc = self.tokenizer(p.claim, p.evidence, truncation=True, max_length=self.max_length)
+        item: dict[str, list[int] | int] = dict(enc)
+        item["labels"] = p.label_id
         return item
+
+
+def make_collate(tokenizer: Any) -> Any:
+    """Pad each batch to its own longest pair.
+
+    Required, not optional, once __getitem__ stops padding: the DataLoader's default collate
+    builds a batch with torch.stack, which fails on rows of different lengths ("stack expects
+    each tensor to be equal size" -- Lesson 2, Part 2).
+    """
+
+    def collate(items: list[dict[str, Any]]) -> dict[str, torch.Tensor]:
+        labels = torch.tensor([it.pop("labels") for it in items], dtype=torch.long)
+        batch = dict(tokenizer.pad(items, return_tensors="pt"))
+        batch["labels"] = labels
+        return batch
+
+    return collate
 
 
 def set_seed(seed: int) -> None:
@@ -207,14 +220,18 @@ def main() -> int:
     n_params = sum(p.numel() for p in model.parameters())
     print(f"  parameters       {n_params / 1e6:.1f}M")
 
+    collate = make_collate(tokenizer)
     train_loader = DataLoader(
         PairDataset(train_pairs, tokenizer, MAX_LENGTH),
         batch_size=args.batch_size,
         shuffle=True,
         drop_last=False,
+        collate_fn=collate,
     )
     tune_loader = DataLoader(
-        PairDataset(tune_pairs, tokenizer, MAX_LENGTH), batch_size=args.batch_size
+        PairDataset(tune_pairs, tokenizer, MAX_LENGTH),
+        batch_size=args.batch_size,
+        collate_fn=collate,
     )
 
     total_steps = len(train_loader) * args.epochs

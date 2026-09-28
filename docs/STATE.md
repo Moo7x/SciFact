@@ -13,8 +13,10 @@
 
 1. **Mounir runs Lesson 3** (`lessons/03_model_setup.py`, CPU, runs on battery) and answers its
    closing question about embedding-table size and nli-deberta-v3-xsmall's 71M.
-2. **Lesson 4**: Mounir writes the training step against tests Claude writes, and applies his
-   Lesson 2 fix (pad per batch + a `collate_fn` for both DataLoaders).
+2. **Lesson 4**: bug hunt on the training step (`lessons/04_training_step.py`). The Lesson 2
+   padding fix is APPLIED (2026-09-28): 0.44 -> 0.13 s/step on GPU; eval outputs identical
+   (verified 0.00 max logit difference with dropout off). Training differs only through dropout's
+   random draws, so **Stage 3b must re-run the baseline** on the new code, not reuse old runs.
 3. **Lesson 5**: GPU / `.to(device)` / mixed precision.
 4. **Stage 3b** (training): nli-MiniLM2 and PubMedBERT-MNLI-MedNLI vs the ms-marco baseline, per
    ADR-0002. Run on Mounir's PC **plugged in**; laptop GPUs throttle on battery. **All arms on the
@@ -38,8 +40,8 @@ running when this was decided) may finish and be analysed; nothing new gets buil
 |---|---|---|---|
 | 1 | Tokenization -- what the model actually receives | predict, then run | done 2026-09-27 |
 | 2 | Dataset / DataLoader / padding -- how pairs become batches | broken version first | done 2026-09-28 |
-| 3 | Model setup -- what's inside, what the head is, tensor shapes | worked example, shapes traced | in progress |
-| 4 | The training step (+ applies Lesson 2's dynamic-padding fix) | Claude writes the tests, Mounir writes the function | |
+| 3 | Model setup -- what's inside, what the head is, tensor shapes | worked example, shapes traced | ready, awaiting run |
+| 4 | The training step: annotated snippet + bug hunt (4 mystery runs, 3 signals) | snippets + diagnose-from-symptoms (Mounir does not write code) | ready, awaiting run |
 | 5 | Device / GPU -- what `.to(device)` moves and why it errors | predict, then run | |
 
 Lessons live in `lessons/` as runnable scripts that pause between reveals.
