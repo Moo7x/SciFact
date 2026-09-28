@@ -112,7 +112,8 @@ def main() -> None:
     )
     w = model.classifier.weight
     print(
-        f"  classifier.weight: {tuple(w.shape)}   classifier.bias: {tuple(model.classifier.bias.shape)}"
+        f"  classifier.weight: {tuple(w.shape)}   "
+        f"classifier.bias: {tuple(model.classifier.bias.shape)}"
     )
     print(
         "\n  ONE output. This model was trained to answer a single question -- 'how relevant\n"
