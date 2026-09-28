@@ -22,9 +22,9 @@ running when this was decided) may finish and be analysed; nothing new gets buil
 | # | Lesson | Method | Status |
 |---|---|---|---|
 | 1 | Tokenization -- what the model actually receives | predict, then run | done 2026-09-27 |
-| 2 | Dataset / DataLoader / padding -- how pairs become batches | broken version first | in progress |
-| 3 | Model setup -- what's inside, what the head is, tensor shapes | worked example, shapes traced | |
-| 4 | The training step | Claude writes the tests, Mounir writes the function | |
+| 2 | Dataset / DataLoader / padding -- how pairs become batches | broken version first | done 2026-09-28 |
+| 3 | Model setup -- what's inside, what the head is, tensor shapes | worked example, shapes traced | in progress |
+| 4 | The training step (+ applies Lesson 2's dynamic-padding fix) | Claude writes the tests, Mounir writes the function | |
 | 5 | Device / GPU -- what `.to(device)` moves and why it errors | predict, then run | |
 
 Lessons live in `lessons/` as runnable scripts that pause between reveals.
