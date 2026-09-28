@@ -339,7 +339,7 @@ Two readings, and they need different fixes:
 Distinguishing them matters for Stage 5: a threshold cannot be "the calibrated operating point"
 if the scores underneath it are not calibrated at all.
 
-## OQ-012 — Does the web-trained vocabulary hurt on biomedical text? — OPEN
+## OQ-012 — Does the web-trained vocabulary hurt on biomedical text? — PARTLY ANSWERED 2026-09-28
 
 **Raised:** 2026-09-27 (Claude), from Lesson 1.
 
@@ -406,3 +406,11 @@ predictions. If it predicts the same label for a claim and its negation, it is n
 negation at all -- and no loss weighting can fix that.
 
 Cheap: inference only, no training. Deferred until the lesson track is done.
+
+## OQ-012 update (2026-09-28) — hypothesis survived its cheap test
+
+Tokens per word on 40,679 words of train text: ms-marco-MiniLM (the Stage 3 model) **1.68, worst
+of five**; PubMedBERT **1.41, best**; deberta-v3 1.46; SciBERT 1.47. PubMedBERT keeps
+`erythrocyte`, `homozygous` and `thalassemia` whole where the chosen tokenizer uses 5, 4 and 3
+pieces. Fragmentation is confirmed. Whether it *causes* worse verification is not yet separated
+from the head and pretraining differences; see ADR-0002.

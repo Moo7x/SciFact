@@ -67,7 +67,7 @@ files = ["src", "scripts", "tests"]
 # `# type: ignore` until the noise stops -- suppresses real errors along with the noise.
 # src/ stays fully strict, including src/scifact/verify/crossencoder.py.
 [[tool.mypy.overrides]]
-module = ["train_crossencoder", "eval_stage3"]
+module = ["train_crossencoder", "eval_stage3", "compare_models"]
 disallow_untyped_defs = false
 disallow_untyped_calls = false
 disallow_any_generics = false

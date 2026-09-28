@@ -32,3 +32,4 @@ the way it is without re-deriving it or, worse, silently reversing it.
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-windows-dev-loop-with-docker-parity.md) | Windows-native dev loop, Docker for Linux/CI parity | Accepted |
+| [0002](0002-stage-3-model-choice-audit.md) | Stage 3 model choice, audited after the fact | Proposed |

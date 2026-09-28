@@ -87,8 +87,17 @@ and it still scores below always predicting SUPPORT. A controlled ablation showe
 
 Removing class weights recovered SUPPORT and dropped CONTRADICT in the same run. Macro-recall
 barely moves. **The weights do not make the model better; they choose which class it
-sacrifices.** The model cannot reliably tell a claim from its own negation, and where it can't,
-the class prior decides.
+sacrifices.** This model cannot reliably tell a claim from its own negation, and where it
+can't, the class prior decides.
+
+**That conclusion is about this model, not yet about the task.** A post-hoc audit
+([ADR-0002](docs/adr/0002-stage-3-model-choice-audit.md)) found the model was a poor match:
+its original head scores search relevance (one output) rather than entailment, and its
+web-trained vocabulary fragments biomedical text the most of five candidates. Zero-shot,
+with no SciFact training, a PubMed-pretrained NLI model reached 80% SUPPORT and 73%
+CONTRADICT recall at once, with no see-saw, though it has probably seen SciFact's abstracts
+in pretraining. The small model was chosen because it trains comfortably on a 4 GB GPU;
+testing the better-matched ones properly is Stage 3b.
 
 ---
 
@@ -204,8 +213,8 @@ docs/
 - **Contamination.** SciFact has been public since 2020, so pretrained models have plausibly seen
   it. This limits claims about absolute performance. Comparisons made under matched conditions
   are affected equally on both sides.
-- **One model size.** Stage 3 used a single 22.7M-parameter model on a 4 GB GPU. Larger models
-  are untested.
+- **One trained model.** Stage 3 fine-tuned a single 22.7M-parameter model chosen for cost,
+  not fit. Better-matched models were only evaluated zero-shot (ADR-0002).
 
 ---
 
