@@ -136,3 +136,29 @@ Mounir decides.
 ## Revisit trigger
 
 Any Stage 3b run that trains a candidate here under the same protocol.
+
+---
+
+## Update 2026-09-29 — the hardware question is answered (Lesson 5)
+
+PubMedBERT-MNLI-MedNLI, one AdamW step, batch 16, same GPU:
+
+| padding | precision | peak memory | time / step |
+|---|---|---|---|
+| fixed to 256 | fp32 | 3.76 GiB | 7,119–13,349 ms (spills into RAM) |
+| fixed to 256 | bf16 | 3.02 GiB | 361 ms |
+| per batch | fp32 | 2.19 GiB | 420 ms |
+| per batch | bf16 | 2.06 GiB | 174 ms |
+
+The real budget is what the driver reports as **free**: 3.23 GiB of 4.00 on this machine, since
+Windows and other applications hold the rest. That is why a 3.76 GiB peak spills and a 3.02 GiB
+peak does not.
+
+Memory breakdown, measured: 419 MB of weights; 4.0x that after one optimizer step (weights,
+gradients, two Adam moments), which confirms 16 bytes per parameter; the peak is 2,112 MB during
+backward. bf16 autocast shrinks only activations, which is why it saves much more at length 256
+than with per-batch padding.
+
+**Option C is feasible locally** with per-batch padding and bf16 on: about 0.17-0.36 s/step,
+with the worst-case batch still fitting. The training script needs a `--bf16` flag before
+Stage 3b.

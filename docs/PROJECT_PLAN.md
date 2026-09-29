@@ -237,6 +237,10 @@ over retrieval, tool calls, and validators. Timeout/retry, fallback path, cachin
 tests. Inject hostile instructions into test documents and measure what happens — read-only
 tools, no write access.
 
+> **Added 2026-09-29 by Mounir:** alongside the hostile-input test, add a simple
+> **concurrent-load test** — a handful of simultaneous requests against the FastAPI service,
+> checking it doesn't fall over. Small addition, not a redesign.
+
 ### Stack, and what each piece is for
 
 | Tool | Why it's here |
