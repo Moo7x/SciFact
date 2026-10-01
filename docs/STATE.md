@@ -19,7 +19,8 @@
    random draws, so **Stage 3b must re-run the baseline** on the new code, not reuse old runs.
 3. **Lesson 5**: `lessons/05_gpu_and_precision.py`, ready. It settled ADR-0002's hardware
    question: PubMedBERT-NLI trains here with per-batch padding + bf16 (~0.17 s/step, 2.06 GiB;
-   real free budget 3.23 GiB). Stage 3b needs a `--bf16` flag added to the training script.
+   real free budget 3.23 GiB). Stage 3b needs a `--bf16` flag AND update-size logging (Lesson 4 debrief:
+   loss + grad alone can't tell 'no step' from 'lr too high') added to the training script.
 4. **Stage 3b** (training): nli-MiniLM2 and PubMedBERT-MNLI-MedNLI vs the ms-marco baseline, per
    ADR-0002. Run on Mounir's PC **plugged in**; laptop GPUs throttle on battery. **All arms on the
    same machine**: CPU vs GPU already gave different losses at the same seed, so mixing Colab
@@ -42,8 +43,8 @@ running when this was decided) may finish and be analysed; nothing new gets buil
 |---|---|---|---|
 | 1 | Tokenization -- what the model actually receives | predict, then run | done 2026-09-27 |
 | 2 | Dataset / DataLoader / padding -- how pairs become batches | broken version first | done 2026-09-28 |
-| 3 | Model setup -- what's inside, what the head is, tensor shapes | worked example, shapes traced | ready, awaiting run |
-| 4 | The training step: annotated snippet + bug hunt (4 mystery runs, 3 signals) | snippets + diagnose-from-symptoms (Mounir does not write code) | ready, awaiting run |
+| 3 | Model setup -- what's inside, what the head is, tensor shapes | worked example, shapes traced | done 2026-09-29 |
+| 4 | The training step: annotated snippet + bug hunt (4 mystery runs, 3 signals) | snippets + diagnose-from-symptoms (Mounir does not write code) | done 2026-10-01 |
 | 5 | GPU, `.to(device)`, memory breakdown, bf16 mixed precision | predict, then run | ready, awaiting run |
 
 Lessons live in `lessons/` as runnable scripts that pause between reveals.
