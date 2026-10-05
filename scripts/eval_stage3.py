@@ -34,7 +34,7 @@ from scifact.verify.dataset import build_pairs  # noqa: E402
 from scifact.verify.labels import VERDICTS  # noqa: E402
 
 DATA_DIR = REPO_ROOT / "data"
-MODEL_DIR = REPO_ROOT / "outputs" / "crossencoder"
+OUTPUTS = REPO_ROOT / "outputs"
 
 
 def pair_level(verifier: CrossEncoderVerifier, pairs: list) -> None:
@@ -71,16 +71,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--k", type=int, default=3)
     parser.add_argument("--skip-claim-level", action="store_true")
+    parser.add_argument("--tag", default="crossencoder", help="which outputs/<tag>/ model")
     args = parser.parse_args()
 
-    if not MODEL_DIR.exists():
-        raise SystemExit(f"{MODEL_DIR} not found. Run scripts/train_crossencoder.py first.")
+    model_dir = OUTPUTS / args.tag
+    if not model_dir.exists():
+        raise SystemExit(f"{model_dir} not found. Run scripts/train_crossencoder.py first.")
 
     corpus = load_corpus(DATA_DIR / "corpus.jsonl")
     _fit, tune = split_train(load_claims(DATA_DIR / "claims_train.jsonl"))
-    verifier = CrossEncoderVerifier(MODEL_DIR)
+    verifier = CrossEncoderVerifier(model_dir)
 
-    print(f"model: {MODEL_DIR}   device: {verifier.device.type}")
+    print(
+        f"model: {model_dir}   "
+        f"order: {'evidence-first' if verifier.evidence_first else 'claim-first'}   "
+        f"device: {verifier.device.type}"
+    )
     print("split: train_tune (held out from the model's training data, not from dev)")
 
     pair_level(verifier, build_pairs(tune, corpus, seed=20260919))

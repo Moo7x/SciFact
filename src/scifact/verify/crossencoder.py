@@ -44,7 +44,11 @@ class CrossEncoderVerifier:
         self.model = AutoModelForSequenceClassification.from_pretrained(model_dir)
         self.model.to(self.device).eval()
         self.decision_threshold = decision_threshold
-        self._name = f"cross-encoder (tau={decision_threshold:.2f})"
+        # The training script records the input order it used. Models saved before that
+        # existed were all trained claim-first, so that is the default.
+        order = getattr(self.model.config, "scifact_pair_order", "claim-first")
+        self.evidence_first = order == "evidence-first"
+        self._name = f"cross-encoder {model_dir.name} (tau={decision_threshold:.2f})"
 
     @property
     def name(self) -> str:
@@ -56,9 +60,11 @@ class CrossEncoderVerifier:
         out: list[torch.Tensor] = []
         for start in range(0, len(sentences), BATCH):
             chunk = list(sentences[start : start + BATCH])
+            claims = [claim] * len(chunk)
+            first, second = (chunk, claims) if self.evidence_first else (claims, chunk)
             enc = self.tokenizer(
-                [claim] * len(chunk),
-                chunk,
+                first,
+                second,
                 truncation=True,
                 max_length=MAX_LENGTH,
                 padding=True,
