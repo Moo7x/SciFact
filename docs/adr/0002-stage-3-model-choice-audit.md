@@ -176,7 +176,10 @@ Stage 4 needs: inference only, on train claims, no dev budget spent.
 
 PubMedBERT-MNLI-MedNLI, no SciFact training, claim level (`scripts/eval_stage3.py --model ...`).
 
-**All 809 train claims** (valid: the model never saw SciFact labels):
+**Split: all 809 train claims** (valid: the model never saw SciFact labels). Conditions A, B
+and C-evidence-bearing score only the **505** claims that have gold evidence; the 304
+NOT_ENOUGH_INFO claims have no rationale to hand over. Only the last row scores all 809.
+(Corrected 2026-10-07: Mounir noticed the interval widths fit n=505, not 809.)
 
 | condition | zero-shot NLI | majority | lexical |
 |---|---|---|---|
