@@ -13,7 +13,8 @@ study over a public benchmark, not a new method. The emphasis is on **measuring 
 every number below comes from a re-runnable command, states its split, and carries a confidence
 interval.
 
-> **Status:** Stages 0–3 complete. All results so far are on **training data**
+> **Status:** Stages 0–2 complete; Stage 2 was extended with a fine-tuned verifier. Stage 3
+> (learned reranking + dense retrieval) is next. All results so far are on **training data**
 > (`train` / `train_tune`). The held-out `dev` split has deliberately not been touched yet.
 
 ---
@@ -62,7 +63,7 @@ right: the model was not responding to evidence at all, just to *how much text* 
 also lost to always predicting the majority class (65.7%). A single run over retrieved evidence
 would have reported 42.4% and hidden all of this.
 
-### Stage 3 — Fine-tuned cross-encoder
+### Stage 2, extended — a fine-tuned verifier
 
 `cross-encoder/ms-marco-MiniLM-L-6-v2` (22.7M parameters), fine-tuned with a hand-written
 PyTorch training loop.
@@ -97,7 +98,7 @@ web-trained vocabulary fragments biomedical text the most of five candidates. Ze
 with no SciFact training, a PubMed-pretrained NLI model reached 80% SUPPORT and 73%
 CONTRADICT recall at once, with no see-saw, though it has probably seen SciFact's abstracts
 in pretraining. The small model was chosen because it trains comfortably on a 4 GB GPU;
-testing the better-matched ones properly is Stage 3b.
+testing the better-matched ones is an optional enhancement.
 
 ---
 
@@ -152,7 +153,7 @@ The full protocol is in [`docs/EVALUATION.md`](docs/EVALUATION.md). The short ve
 - **Every number carries a 95% bootstrap interval**, resampled over claims. A difference smaller
   than the interval is not reported as a difference.
 - **Macro-recall is required alongside accuracy.** Accuracy on imbalanced classes rewards a model
-  for abandoning the rare ones, and Stage 3 did exactly that.
+  for abandoning the rare ones, and the verifier fine-tune did exactly that.
 - **Controls are mandatory.** A baseline exists to absorb the credit that doesn't belong to the
   method.
 - **Tuning is counted.** Trying *m* variants inflates the best one by roughly σ√(2 ln m).
@@ -173,7 +174,7 @@ uv run python scripts/describe_data.py          # dataset measurements
 uv run python scripts/demonstrate_leakage.py    # the two leakage demonstrations
 uv run python scripts/run_stage1.py             # BM25 against its controls
 uv run python scripts/run_stage2.py             # three-condition failure decomposition
-uv run python scripts/train_crossencoder.py     # Stage 3 fine-tune
+uv run python scripts/train_crossencoder.py     # verifier fine-tune
 uv run python scripts/eval_stage3.py            # confusion matrix + decomposition
 uv run python scripts/run_oq010.py              # class-weighting ablation
 uv run pytest                                   # 46 tests; CI runs them on Linux and Windows
@@ -213,13 +214,15 @@ docs/
 - **Contamination.** SciFact has been public since 2020, so pretrained models have plausibly seen
   it. This limits claims about absolute performance. Comparisons made under matched conditions
   are affected equally on both sides.
-- **One trained model.** Stage 3 fine-tuned a single 22.7M-parameter model chosen for cost,
+- **One trained model.** The verifier fine-tune used a single 22.7M-parameter model chosen for cost,
   not fit. Better-matched models were only evaluated zero-shot (ADR-0002).
 
 ---
 
 ## Roadmap
 
+- **Stage 3:** learned reranking, compared against BM25 and off-the-shelf dense retrieval (FAISS),
+  scored with the Stage 1 retrieval metrics.
 - **Stage 4:** fixed pipeline vs a bounded agent (reformulate, search again, read, stop) under
   the same call budget. A result where the cheaper pipeline wins will be reported as a result.
 - **Stage 5:** abstention as a calibrated decision with a defended operating point.

@@ -36,11 +36,12 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import torch  # noqa: E402
 from torch.utils.data import DataLoader, Dataset  # noqa: E402
-from transformers import AutoModelForSequenceClassification, AutoTokenizer  # noqa: E402
+from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer  # noqa: E402
 
 from scifact.data.schema import load_claims, load_corpus  # noqa: E402
 from scifact.data.splits import split_train  # noqa: E402
 from scifact.verify.dataset import ID_TO_LABEL, Pair, build_pairs, label_counts  # noqa: E402
+from scifact.verify.heads import nli_permutation, output_layer, permute_rows  # noqa: E402
 
 DATA_DIR = REPO_ROOT / "data"
 OUT_DIR = REPO_ROOT / "outputs"
@@ -53,10 +54,16 @@ MAX_LENGTH = 256  # claim + one evidence sentence; p95 of that pair fits well in
 
 
 class PairDataset(Dataset[dict[str, Any]]):
-    def __init__(self, pairs: list[Pair], tokenizer: Any, max_length: int) -> None:
+    def __init__(
+        self, pairs: list[Pair], tokenizer: Any, max_length: int, evidence_first: bool = False
+    ) -> None:
         self.pairs = pairs
         self.tokenizer = tokenizer
         self.max_length = max_length
+        # Each model is fed the pair in the order its pretraining used. MS MARCO models saw
+        # (query, passage) = (claim, evidence); NLI models saw (premise, hypothesis) =
+        # (evidence, claim). Swapping it asks the model a question it was never trained on.
+        self.evidence_first = evidence_first
 
     def __len__(self) -> int:
         return len(self.pairs)
@@ -66,7 +73,8 @@ class PairDataset(Dataset[dict[str, Any]]):
         # positions padding (Lesson 2). Items stay at their natural length and each BATCH is
         # padded to its own longest member by `make_collate` below.
         p = self.pairs[i]
-        enc = self.tokenizer(p.claim, p.evidence, truncation=True, max_length=self.max_length)
+        first, second = (p.evidence, p.claim) if self.evidence_first else (p.claim, p.evidence)
+        enc = self.tokenizer(first, second, truncation=True, max_length=self.max_length)
         item: dict[str, list[int] | int] = dict(enc)
         item["labels"] = p.label_id
         return item
@@ -126,6 +134,7 @@ def evaluate(
     loader: DataLoader,
     device: torch.device,
     weights: torch.Tensor | None,
+    bf16: bool = False,
 ) -> tuple[float, float, dict]:
     """Return (mean loss, accuracy, per-class recall). No gradients: eval must not train."""
     model.eval()
@@ -135,8 +144,9 @@ def evaluate(
     for batch in loader:
         batch = {k: v.to(device) for k, v in batch.items()}
         labels = batch.pop("labels")
-        out = model(**batch)
-        loss = torch.nn.functional.cross_entropy(out.logits, labels, weight=weights)
+        with torch.autocast(device.type, dtype=torch.bfloat16, enabled=bf16):
+            out = model(**batch)
+        loss = torch.nn.functional.cross_entropy(out.logits.float(), labels, weight=weights)
         total_loss += loss.item() * labels.size(0)
         batch["labels"] = labels
         preds = out.logits.argmax(dim=-1)
@@ -186,6 +196,24 @@ def main() -> int:
     parser.add_argument(
         "--tag", default="crossencoder", help="output subdirectory, so arms do not overwrite"
     )
+    parser.add_argument(
+        "--bf16",
+        action="store_true",
+        help="mixed precision (Lesson 5). Shrinks activations and speeds up matmuls; weights, "
+        "gradients and Adam state stay fp32. Needed for the 110M-parameter candidates to fit.",
+    )
+    parser.add_argument(
+        "--pair-order",
+        choices=["auto", "claim-first", "evidence-first"],
+        default="auto",
+        help="auto = evidence-first for NLI heads (premise, hypothesis), claim-first otherwise",
+    )
+    parser.add_argument(
+        "--no-align-head",
+        action="store_true",
+        help="skip reordering an NLI head to our label order. Exists only to demonstrate "
+        "what that alignment is worth -- never use it for a real run.",
+    )
     args = parser.parse_args()
 
     set_seed(args.seed)
@@ -213,23 +241,46 @@ def main() -> int:
     print(f"  epochs {args.epochs}  batch {args.batch_size}  lr {args.lr}  seed {args.seed}")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
+    # Read the ORIGINAL label names before loading: passing num_labels=3 below can rewrite them.
+    original_labels = AutoConfig.from_pretrained(args.model).id2label or {}
+    perm = nli_permutation(original_labels)
     model = AutoModelForSequenceClassification.from_pretrained(
         args.model, num_labels=3, ignore_mismatched_sizes=True
     ).to(device)
 
+    if perm is not None and not args.no_align_head:
+        permute_rows(output_layer(model.classifier), perm)
+        head_note = f"pretrained NLI head, rows reordered {perm} to SUPPORT/CONTRADICT/NEI"
+    elif perm is not None:
+        head_note = "pretrained NLI head, NOT aligned (--no-align-head: demonstration only)"
+    else:
+        head_note = "no usable pretrained head: a fresh 3-way head is trained from scratch"
+    model.config.id2label = dict(ID_TO_LABEL)
+    model.config.label2id = {v: k for k, v in ID_TO_LABEL.items()}
+
+    evidence_first = args.pair_order == "evidence-first" or (
+        args.pair_order == "auto" and perm is not None
+    )
+    # Recorded in the saved config, so whatever loads the model later feeds it the same order.
+    model.config.scifact_pair_order = "evidence-first" if evidence_first else "claim-first"
+    bf16 = args.bf16 and device.type == "cuda" and torch.cuda.is_bf16_supported()
+
     n_params = sum(p.numel() for p in model.parameters())
     print(f"  parameters       {n_params / 1e6:.1f}M")
+    print(f"  head             {head_note}")
+    print(f"  pair order       {model.config.scifact_pair_order}")
+    print(f"  precision        {'bf16 autocast' if bf16 else 'fp32'}")
 
     collate = make_collate(tokenizer)
     train_loader = DataLoader(
-        PairDataset(train_pairs, tokenizer, MAX_LENGTH),
+        PairDataset(train_pairs, tokenizer, MAX_LENGTH, evidence_first),
         batch_size=args.batch_size,
         shuffle=True,
         drop_last=False,
         collate_fn=collate,
     )
     tune_loader = DataLoader(
-        PairDataset(tune_pairs, tokenizer, MAX_LENGTH),
+        PairDataset(tune_pairs, tokenizer, MAX_LENGTH, evidence_first),
         batch_size=args.batch_size,
         collate_fn=collate,
     )
@@ -282,8 +333,23 @@ def main() -> int:
         pretty = "  ".join(f"{ID_TO_LABEL[i]}={weights[i]:.2f}" for i in range(len(weights)))
         print(f"  class weights    {pretty}")
 
-    loss0, acc0, _ = evaluate(model, tune_loader, device, weights)
-    print(f"\n  before training:  tune loss {loss0:.4f}   acc {acc0:.1%}")
+    loss0, acc0, rec0 = evaluate(model, tune_loader, device, weights, bf16)
+    print(
+        f"\n  before training:  tune loss {loss0:.4f}   acc {acc0:.1%}   recall "
+        + "  ".join(f"{k[:3]}={v:.0%}" for k, v in rec0.items())
+    )
+
+    # A CPU copy of the starting weights, so every log line can report how far training has
+    # moved them. Lesson 4: loss + gradient size alone cannot tell "optimizer.step missing"
+    # (moved = 0) from "learning rate far too high" (moved = huge). Kept on the CPU because
+    # GPU memory is the scarce resource (Lesson 5).
+    start_weights = [p.detach().float().cpu().clone() for p in model.parameters()]
+
+    def weights_moved() -> float:
+        total = 0.0
+        for p, p0 in zip(model.parameters(), start_weights, strict=True):
+            total += float((p.detach().float().cpu() - p0).pow(2).sum())
+        return math.sqrt(total)
 
     for epoch in range(1, args.epochs + 1):
         running: list[float] = []
@@ -291,11 +357,12 @@ def main() -> int:
             batch = {k: v.to(device) for k, v in batch.items()}
 
             labels = batch.pop("labels")
-            outputs = model(**batch)  # forward: token ids -> 3 logits per example
+            with torch.autocast(device.type, dtype=torch.bfloat16, enabled=bf16):
+                outputs = model(**batch)  # forward: token ids -> 3 logits per example
             # Loss computed explicitly rather than letting the model do it, so the
             # weighting is visible and so the loss is not a black box in the one place
-            # this script exists to make legible.
-            loss = torch.nn.functional.cross_entropy(outputs.logits, labels, weight=weights)
+            # this script exists to make legible. Computed in fp32 even under bf16.
+            loss = torch.nn.functional.cross_entropy(outputs.logits.float(), labels, weight=weights)
 
             loss.backward()  # backward: fills p.grad for every parameter
             grad_norm = torch.nn.utils.clip_grad_norm_(
@@ -310,15 +377,18 @@ def main() -> int:
 
             if step % args.log_every == 0:
                 window = sum(running[-args.log_every :]) / len(running[-args.log_every :])
+                moved = weights_moved()
                 print(
                     f"  epoch {epoch}  step {step:>4}/{total_steps}  "
-                    f"loss {window:.4f}  grad_norm {grad_norm:5.2f}  "
+                    f"loss {window:.4f}  grad_norm {grad_norm:5.2f}  moved {moved:7.3f}  "
                     f"lr {scheduler.get_last_lr()[0]:.2e}"
                 )
-                history.append({"step": step, "train_loss": window, "grad_norm": grad_norm})
+                history.append(
+                    {"step": step, "train_loss": window, "grad_norm": grad_norm, "moved": moved}
+                )
 
             if step % args.eval_every == 0 and not args.smoke:
-                ev_loss, ev_acc, ev_rec = evaluate(model, tune_loader, device, weights)
+                ev_loss, ev_acc, ev_rec = evaluate(model, tune_loader, device, weights, bf16)
                 flag = ""
                 if ev_loss < best_loss:
                     best_loss, best_step = ev_loss, step
@@ -344,7 +414,7 @@ def main() -> int:
         if args.smoke and step >= 20:
             break
 
-        tune_loss, tune_acc, recalls = evaluate(model, tune_loader, device, weights)
+        tune_loss, tune_acc, recalls = evaluate(model, tune_loader, device, weights, bf16)
         train_loss = sum(running) / len(running)
         print(
             f"\n  >> epoch {epoch}:  train {train_loss:.4f}   tune {tune_loss:.4f}   "

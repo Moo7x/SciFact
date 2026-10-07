@@ -162,3 +162,12 @@ than with per-batch padding.
 **Option C is feasible locally** with per-batch padding and bf16 on: about 0.17-0.36 s/step,
 with the worst-case batch still fitting. The training script needs a `--bf16` flag before
 Stage 3b.
+
+---
+
+## Update 2026-10-07 — Mounir's decision
+
+The model comparison is **not** a stage. The work this ADR covers is reclassified as Stage 2 done
+deeper than planned (the plan's Stage 3 is a retrieval reranker). Training options B and C become
+an optional enhancement. Instead, the strongest candidate is measured **zero-shot** as the verifier
+Stage 4 needs: inference only, on train claims, no dev budget spent.
