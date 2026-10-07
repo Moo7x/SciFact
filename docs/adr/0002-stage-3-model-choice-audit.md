@@ -171,3 +171,33 @@ The model comparison is **not** a stage. The work this ADR covers is reclassifie
 deeper than planned (the plan's Stage 3 is a retrieval reranker). Training options B and C become
 an optional enhancement. Instead, the strongest candidate is measured **zero-shot** as the verifier
 Stage 4 needs: inference only, on train claims, no dev budget spent.
+
+## Zero-shot result as the Stage 4 verifier (2026-10-07)
+
+PubMedBERT-MNLI-MedNLI, no SciFact training, claim level (`scripts/eval_stage3.py --model ...`).
+
+**All 809 train claims** (valid: the model never saw SciFact labels):
+
+| condition | zero-shot NLI | majority | lexical |
+|---|---|---|---|
+| A. oracle sentences (n=505) | **80.6%** [77.0, 84.0] | 65.7% [61.6, 69.9] | 27.5% |
+| B. oracle abstract | 79.4% | 65.7% | 35.4% |
+| C. retrieved@3, evidence-bearing | 78.4% | 65.7% | 42.4% |
+| C. retrieved@3, all claims (n=809) | 52.0% | 41.0% | 52.8% |
+
+Per class under condition A: SUPPORT 85.2%, CONTRADICT 71.7%. **No see-saw.** The decomposition
+costs are now positive and small (+1.2 sentence selection, +1.0 retrieval): the model responds to
+evidence quality, unlike the lexical verifier, whose costs were negative.
+
+**Like for like against our fine-tuned verifier** (train_tune, condition A, n=101): zero-shot
+**81.2%** [73.3, 89.1] vs fine-tuned 44.6% [34.7, 54.5]. The intervals do not overlap.
+
+**The weakness is abstention.** Under condition C on all claims, NEI recall is **8.2%**. Taking the
+most decisive of about 24 retrieved sentences with no threshold means the model almost never
+says "not enough info" (the selection-bias pattern again). That is Stage 5's problem, and the
+threshold is Mounir's decision.
+
+Caveat unchanged: PubMed pretraining has plausibly included SciFact's abstracts.
+
+Consequence: training better verifiers (the optional enhancement) is not needed to get a strong
+verifier for Stage 4. It is already better zero-shot than anything trained here.
