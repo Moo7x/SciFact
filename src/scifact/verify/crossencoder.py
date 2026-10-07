@@ -24,6 +24,7 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from scifact.verify.dataset import ID_TO_LABEL
+from scifact.verify.heads import nli_permutation, output_layer, permute_rows
 from scifact.verify.labels import NEI, Verdict
 
 MAX_LENGTH = 256
@@ -35,20 +36,31 @@ class CrossEncoderVerifier:
 
     def __init__(
         self,
-        model_dir: Path,
+        model_dir: Path | str,
         device: str | None = None,
         decision_threshold: float = 0.0,
     ) -> None:
         self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+
+        # An off-the-shelf NLI model (zero-shot use) still has its labels in its own order.
+        # Align it exactly as training does (heads.py); a model saved by our training script
+        # already carries our labels, so nli_permutation returns None and nothing moves twice.
+        perm = nli_permutation(self.model.config.id2label or {})
+        self.zero_shot_nli = perm is not None
+        if perm is not None:
+            permute_rows(output_layer(self.model.classifier), perm)
+
         self.model.to(self.device).eval()
         self.decision_threshold = decision_threshold
-        # The training script records the input order it used. Models saved before that
-        # existed were all trained claim-first, so that is the default.
-        order = getattr(self.model.config, "scifact_pair_order", "claim-first")
+        # The training script records the input order it used. Off-the-shelf NLI models read
+        # (premise, hypothesis) = (evidence, claim). Older saved models were claim-first.
+        default = "evidence-first" if self.zero_shot_nli else "claim-first"
+        order = getattr(self.model.config, "scifact_pair_order", default)
         self.evidence_first = order == "evidence-first"
-        self._name = f"cross-encoder {model_dir.name} (tau={decision_threshold:.2f})"
+        label = str(model_dir).replace("\\", "/").rstrip("/").split("/")[-1]
+        self._name = f"cross-encoder {label} (tau={decision_threshold:.2f})"
 
     @property
     def name(self) -> str:

@@ -72,22 +72,43 @@ def main() -> int:
     parser.add_argument("--k", type=int, default=3)
     parser.add_argument("--skip-claim-level", action="store_true")
     parser.add_argument("--tag", default="crossencoder", help="which outputs/<tag>/ model")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="a Hugging Face model id to evaluate ZERO-SHOT instead of a trained outputs/<tag>",
+    )
+    parser.add_argument(
+        "--split",
+        choices=["train_tune", "train"],
+        default="train_tune",
+        help="train = all 809 train claims. Valid only for a model never trained on SciFact "
+        "(zero-shot): for it, every train claim is unseen. A model trained on train_fit must "
+        "use train_tune, or it is scored on its own training data.",
+    )
     args = parser.parse_args()
 
-    model_dir = OUTPUTS / args.tag
-    if not model_dir.exists():
-        raise SystemExit(f"{model_dir} not found. Run scripts/train_crossencoder.py first.")
+    if args.model:
+        source: Path | str = args.model
+    else:
+        trained = OUTPUTS / args.tag
+        if not trained.exists():
+            raise SystemExit(f"{trained} not found. Run scripts/train_crossencoder.py first.")
+        source = trained
+        if args.split == "train":
+            raise SystemExit("Refusing: a trained model scored on --split train is in-sample.")
 
     corpus = load_corpus(DATA_DIR / "corpus.jsonl")
-    _fit, tune = split_train(load_claims(DATA_DIR / "claims_train.jsonl"))
-    verifier = CrossEncoderVerifier(model_dir)
+    train = load_claims(DATA_DIR / "claims_train.jsonl")
+    _fit, tune = split_train(train)
+    tune = train if args.split == "train" else tune
+    verifier = CrossEncoderVerifier(source)
 
     print(
-        f"model: {model_dir}   "
+        f"model: {source}   zero-shot NLI: {verifier.zero_shot_nli}   "
         f"order: {'evidence-first' if verifier.evidence_first else 'claim-first'}   "
         f"device: {verifier.device.type}"
     )
-    print("split: train_tune (held out from the model's training data, not from dev)")
+    print(f"split: {args.split} ({len(tune)} claims). Dev untouched.")
 
     pair_level(verifier, build_pairs(tune, corpus, seed=20260919))
 

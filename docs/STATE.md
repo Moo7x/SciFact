@@ -9,25 +9,29 @@
 
 ---
 
-## RESUME HERE (2026-09-28)
+## RESUME HERE (2026-10-07) -- Stage 3 rescoped back to the plan
 
-1. **Mounir runs Lesson 3** (`lessons/03_model_setup.py`, CPU, runs on battery) and answers its
-   closing question about embedding-table size and nli-deberta-v3-xsmall's 71M.
-2. **Lesson 4**: bug hunt on the training step (`lessons/04_training_step.py`). The Lesson 2
-   padding fix is APPLIED (2026-09-28): 0.44 -> 0.13 s/step on GPU; eval outputs identical
-   (verified 0.00 max logit difference with dropout off). Training differs only through dropout's
-   random draws, so **Stage 3b must re-run the baseline** on the new code, not reuse old runs.
-3. **Lesson 5**: `lessons/05_gpu_and_precision.py`, ready. It settled ADR-0002's hardware
-   question: PubMedBERT-NLI trains here with per-batch padding + bf16 (~0.17 s/step, 2.06 GiB;
-   real free budget 3.23 GiB). Stage 3b needs a `--bf16` flag AND update-size logging (Lesson 4 debrief:
-   loss + grad alone can't tell 'no step' from 'lr too high') added to the training script.
-4. **Stage 3b** (training): nli-MiniLM2 and PubMedBERT-MNLI-MedNLI vs the ms-marco baseline, per
-   ADR-0002. Run on Mounir's PC **plugged in**; laptop GPUs throttle on battery. **All arms on the
-   same machine**: CPU vs GPU already gave different losses at the same seed, so mixing Colab
-   and the laptop would add a hidden variable.
-5. **Pending Mounir's decisions before the repo goes public:** email visibility in commits,
-   keeping Claude co-author trailers, keeping the learning docs, and a license (Apache-2.0
-   recommended). The repo is still PRIVATE.
+**Mounir's decision, 2026-10-07:** what was called "Stage 3" (a fine-tuned 3-way verifier) drifted
+from the plan. The plan's Stage 3 is a **learned reranker for retrieval, compared against BM25
+and off-the-shelf dense retrieval (FAISS), scored with retrieval metrics.** So:
+
+- The verifier work (cross-encoder fine-tune, the SUPPORT/CONTRADICT see-saw, the model audit)
+  counts as **Stage 2 done more deeply than planned**.
+- **"Stage 3b"** (training better-matched verifiers, ADR-0002) is an **optional enhancement**
+  only, not a stage. Not run without Mounir's yes.
+- Stage 4 needs a verifier. Measured **zero-shot** instead of training more arms (inference only,
+  train claims, no dev budget spent).
+
+**Next, in order:**
+1. Zero-shot NLI verifier results, delivered in chat.
+2. PR #2 reviewed IN CHAT with code snippets (Mounir doesn't open files), then merged.
+3. **Teach FAISS and dense retrieval properly** before building anything with them: why it and
+   not the alternative, the key API calls, a walkthrough of real code. Use a new format.
+4. Stage 3 proper: dense retrieval baseline (FAISS) + learned reranker vs BM25, retrieval metrics.
+
+**Working rules (2026-10-07):** Mounir does not write code; every explanation includes real code
+snippets walked through in chat; anything important goes in chat, not only in files; session
+summary in chat at the end; end-of-stage optional enhancements with cost, benefit and learning.
 
 ## BUILDING IS PAUSED (2026-09-26) -- read before doing anything
 

@@ -1,4 +1,8 @@
-"""Stage 3b: does a better-matched model fix what Stage 3 broke? (ADR-0002)
+"""OPTIONAL ENHANCEMENT, not a stage: train better-matched verifiers (ADR-0002).
+
+Not run without Mounir's explicit yes (decision 2026-10-07). Kept so the option is ready.
+
+Does a better-matched model fix what the verifier fine-tune broke?
 
 Three arms. Everything is identical except the model: same data, seed, epochs, learning rate,
 class weights, negatives, per-batch padding and bf16. The baseline is re-run rather than reused,
