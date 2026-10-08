@@ -8,6 +8,7 @@ readme = "README.md"
 # exercises the older version.
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "faiss-cpu>=1.15.1",
     "torch>=2.14.0",
     "transformers>=5.17.0",
 ]
@@ -67,7 +68,7 @@ files = ["src", "scripts", "tests"]
 # `# type: ignore` until the noise stops -- suppresses real errors along with the noise.
 # src/ stays fully strict, including src/scifact/verify/crossencoder.py.
 [[tool.mypy.overrides]]
-module = ["train_crossencoder", "eval_stage3", "compare_models", "run_stage3b"]
+module = ["train_crossencoder", "eval_stage3", "compare_models", "run_stage3b", "run_dense"]
 disallow_untyped_defs = false
 disallow_untyped_calls = false
 disallow_any_generics = false
