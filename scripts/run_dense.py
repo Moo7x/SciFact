@@ -108,11 +108,13 @@ def main() -> int:
     dense.search_vectors(claim_vecs, 10)
     t_faiss = time.perf_counter() - t0
     t0 = time.perf_counter()
-    np.argsort(-(claim_vecs @ vecs.T), axis=1)[:, :10]
+    np.argpartition(-(claim_vecs @ vecs.T), 10, axis=1)[
+        :, :10
+    ]  # fair: finds top 10 without a full sort
     t_numpy = time.perf_counter() - t0
     print(f"\n  exact top-10 for {n} claims over {len(doc_ids):,} abstracts:")
     print(f"    FAISS IndexFlatIP   {t_faiss * 1000:7.1f} ms")
-    print(f"    numpy matmul+sort   {t_numpy * 1000:7.1f} ms")
+    print(f"    numpy argpartition  {t_numpy * 1000:7.1f} ms")
 
     if args.export:
         export(args.export, corpus, doc_ids, vecs, encoder, bm25, dense, per_claim)
