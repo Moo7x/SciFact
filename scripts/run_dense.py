@@ -18,6 +18,7 @@ import json
 import random
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -104,14 +105,22 @@ def main() -> int:
     print(f"    either one  {n - neither:>4}  ({(n - neither) / n:.1%})   <- ceiling if combined")
 
     # ------------------------------------------------------------------ why FAISS
-    t0 = time.perf_counter()
-    dense.search_vectors(claim_vecs, 10)
-    t_faiss = time.perf_counter() - t0
-    t0 = time.perf_counter()
-    np.argpartition(-(claim_vecs @ vecs.T), 10, axis=1)[
-        :, :10
-    ]  # fair: finds top 10 without a full sort
-    t_numpy = time.perf_counter() - t0
+    def timed(fn: Callable[[], object], reps: int = 5) -> float:
+        """Mean wall time in seconds over `reps` runs, after one discarded warm-up run.
+
+        A single cold run includes one-off costs (memory allocation, caches, thread pools)
+        that say nothing about steady-state speed: one cold numpy run measured ~85 ms
+        against ~23 ms warmed up.
+        """
+        fn()
+        t0 = time.perf_counter()
+        for _ in range(reps):
+            fn()
+        return (time.perf_counter() - t0) / reps
+
+    t_faiss = timed(lambda: dense.search_vectors(claim_vecs, 10))
+    # Fair numpy baseline: argpartition finds the top 10 without fully sorting all 5,183.
+    t_numpy = timed(lambda: np.argpartition(-(claim_vecs @ vecs.T), 10, axis=1)[:, :10])
     print(f"\n  exact top-10 for {n} claims over {len(doc_ids):,} abstracts:")
     print(f"    FAISS IndexFlatIP   {t_faiss * 1000:7.1f} ms")
     print(f"    numpy argpartition  {t_numpy * 1000:7.1f} ms")
