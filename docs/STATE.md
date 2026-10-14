@@ -44,6 +44,13 @@ merged**. Next is part 2: the cross-encoder reranker.
 - Teach the interview fundamentals (embeddings, chunk size, measuring retrieval quality) with
   this project's measured numbers.
 
+**Measured 2026-10-14 (docs/concepts/11):** encoder survey + contamination audit done.
+MedCPT: hit@1 78.0 / hit@10 98.8 (best hit@10, no MTEB-SciFact claim in its card). bge-small
+(80.8) and e5-base (78.0) are flagged: their cards report MTEB SciFact = our dev (OQ-014).
+MiniLM's 256-token limit cuts 53.9% of gold rationales; sentence chunks beat whole abstracts
+(hit@1 76.4 vs 68.7). FAISS Flat is the right index at 5,183 vectors. The lesson goes to Mounir
+in chat next, then the reranker training concept, then his metric + cost-logging code.
+
 **Next, in order:**
 1. Stage 3 part 2 DESIGN in chat (design before code): reranker over the BM25 + dense
    shortlist; the cheap control first (rank fusion); an encoder/reranker survey with a

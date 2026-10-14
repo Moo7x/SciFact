@@ -44,7 +44,7 @@ def corpus_vectors(encoder: Encoder, texts: list[str]) -> np.ndarray:
             print(f"  corpus vectors: loaded from cache {path.name}  shape {vecs.shape}")
             return vecs
     t0 = time.perf_counter()
-    vecs = encoder.encode(texts)
+    vecs = encoder.encode(texts, "doc")
     CACHE.mkdir(exist_ok=True)
     np.save(path, vecs)
     print(f"  corpus vectors: encoded {vecs.shape} in {time.perf_counter() - t0:.1f}s, cached")

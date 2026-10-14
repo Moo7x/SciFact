@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import re
 import urllib.request
+from typing import Any
 
 CANDIDATES = [
     "sentence-transformers/all-MiniLM-L6-v2",
@@ -49,7 +50,7 @@ def fetch(url: str) -> str:
     try:
         with urllib.request.urlopen(url, timeout=30) as r:  # noqa: S310 - fixed Hub URLs
             return r.read().decode("utf-8", errors="replace")
-    except Exception as exc:  # noqa: BLE001 - report and continue; one bad card must not stop the survey
+    except Exception as exc:
         return f"__ERROR__ {exc}"
 
 
@@ -63,7 +64,7 @@ def context(text: str, pattern: str, width: int = 70) -> str:
 
 
 def main() -> int:
-    rows = []
+    rows: list[dict[str, Any]] = []
     for name in CANDIDATES:
         meta_raw = fetch(f"https://huggingface.co/api/models/{name}")
         card = fetch(f"https://huggingface.co/{name}/raw/main/README.md")
@@ -89,12 +90,16 @@ def main() -> int:
             }
         )
 
-    print(f"{'model':<42} {'params':>6} {'dim':>4} {'vocab':>6} {'license':<12} "
-          + " ".join(f"{k[:7]:>7}" for k in KEYWORDS))
+    print(
+        f"{'model':<42} {'params':>6} {'dim':>4} {'vocab':>6} {'license':<12} "
+        + " ".join(f"{k[:7]:>7}" for k in KEYWORDS)
+    )
     for r in rows:
         flags = " ".join(f"{'yes' if r['mentions'][k] else '-':>7}" for k in KEYWORDS)
-        print(f"{r['model']:<42} {str(r['params_m']) + 'M':>6} {r['dim']!s:>4} {r['vocab']!s:>6} "
-              f"{str(r['license'])[:12]:<12} {flags}")
+        print(
+            f"{r['model']:<42} {str(r['params_m']) + 'M':>6} {r['dim']!s:>4} {r['vocab']!s:>6} "
+            f"{str(r['license'])[:12]:<12} {flags}"
+        )
     print("\nWhere a card mentions SciFact, the surrounding text:")
     for r in rows:
         if r["scifact_context"]:
