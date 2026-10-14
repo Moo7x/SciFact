@@ -32,6 +32,18 @@ merged**. Next is part 2: the cross-encoder reranker.
    and 4) delivered 2026-10-08. The encoder was NOT surveyed (it was already on disk); it needs an
    ADR-0002-style audit before the final Stage 3 comparison.
 
+**Mounir's decisions, 2026-10-14 (Stage 3 part 2):**
+- YES: core reranker (BM25 + dense shortlist, fine-tuned cross-encoder) + BOTH controls
+  (rank fusion RRF; the off-the-shelf ms-marco cross-encoder zero-shot as a reranker).
+- YES: enhancement C (cost per claim for every pipeline) and B (contamination audit of candidate
+  models). HOLD: A (false-negative audit) until the reranker works.
+- Before ANY Stage 3 code: teach dense retrieval and FAISS properly (why this embedding model,
+  with model cards; what the index stores), then the reranker training concept.
+- **Mounir writes the metric code and the cost-logging code himself** (Claude writes the spec and
+  the tests, he writes the function, Claude corrects him).
+- Teach the interview fundamentals (embeddings, chunk size, measuring retrieval quality) with
+  this project's measured numbers.
+
 **Next, in order:**
 1. Stage 3 part 2 DESIGN in chat (design before code): reranker over the BM25 + dense
    shortlist; the cheap control first (rank fusion); an encoder/reranker survey with a
