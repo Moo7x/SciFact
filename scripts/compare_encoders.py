@@ -26,7 +26,7 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 from scifact.data.schema import load_claims, load_corpus  # noqa: E402
-from scifact.eval.harness import evaluate_document_retrieval  # noqa: E402
+from scifact.eval.harness import RetrievalResult, evaluate_document_retrieval  # noqa: E402
 from scifact.retrieval.bm25 import build_index  # noqa: E402
 from scifact.retrieval.dense import SPECS, DenseIndex, Encoder  # noqa: E402
 
@@ -93,7 +93,7 @@ def main() -> int:
     print("=" * 100)
     print(f"  {'model':<24} {'hit@1':>22} {'hit@10':>7} {'MRR':>6} {'dim':>4} {'params':>7}  flags")
     out = []
-    for name, res, dim, params, enc_s in rows:
+    for name, res, dim, params, secs in rows:
         flags = []
         if name in MTEB_SCIFACT_IN_CARD:
             flags.append("CARD REPORTS MTEB SciFact (= our dev)")
@@ -114,7 +114,7 @@ def main() -> int:
                 "mrr": res.mrr.value,
                 "dim": dim,
                 "params": params,
-                "encode_s": enc_s,
+                "encode_s": secs,
                 "flags": flags,
             }
         )
