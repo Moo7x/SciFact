@@ -414,3 +414,27 @@ of five**; PubMedBERT **1.41, best**; deberta-v3 1.46; SciBERT 1.47. PubMedBERT 
 `erythrocyte`, `homozygous` and `thalassemia` whole where the chosen tokenizer uses 5, 4 and 3
 pieces. Fragmentation is confirmed. Whether it *causes* worse verification is not yet separated
 from the head and pretraining differences; see ADR-0002.
+
+## OQ-014 — The MTEB/BEIR "SciFact test" set IS our dev set — FINDING, 2026-10-14
+
+Measured by claim ID (`mteb/scifact` qrels on the Hugging Face Hub):
+
+| MTEB/BEIR split | claims | = our split |
+|---|---|---|
+| test | 300 | **dev, 300 of 300** |
+| train | 809 | train, 809 of 809 |
+
+SciFact's real test labels are hidden, so the benchmark suites reuse the labelled dev set as
+their "test". Consequences for this project:
+
+- Any embedding model tuned, selected or advertised by its MTEB/BEIR score has been scored on our
+  holdout. `BAAI/bge-small-en-v1.5`, `BAAI/bge-base-en-v1.5` and `intfloat/e5-base-v2` publish
+  their "MTEB SciFact test" score in their own model cards.
+- Choosing an encoder by leaderboard rank = selecting on our dev set, the exact trap
+  `docs/EVALUATION.md` forbids.
+- Models whose declared training data predates MTEB (2022) and doesn't target it are lower risk,
+  not zero risk. all-MiniLM-L6-v2 lists 21 training datasets, including S2ORC and SPECTER
+  scientific-paper pairs (possible exposure to abstract TEXT, not to claims or labels).
+
+Mitigation: use model cards only to exclude, never to rank. Choose among candidates on `train`
+only, and report every dev number with this caveat.
