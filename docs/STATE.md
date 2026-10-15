@@ -9,29 +9,62 @@
 
 ---
 
-## RESUME HERE (2026-10-07) -- Stage 3 rescoped back to the plan
+## RESUME HERE (2026-10-13) -- read this first after any context reset
 
-**Mounir's decision, 2026-10-07:** what was called "Stage 3" (a fine-tuned 3-way verifier) drifted
-from the plan. The plan's Stage 3 is a **learned reranker for retrieval, compared against BM25
-and off-the-shelf dense retrieval (FAISS), scored with retrieval metrics.** So:
+**Where we are:** the plan's real Stage 3 (learned reranking vs BM25 vs off-the-shelf dense).
+Part 1 (dense baseline) is DONE on branch `feat/stage-3-dense-retrieval`, **PR #3 open, not
+merged**. Next is part 2: the cross-encoder reranker.
 
-- The verifier work (cross-encoder fine-tune, the SUPPORT/CONTRADICT see-saw, the model audit)
-  counts as **Stage 2 done more deeply than planned**.
-- **"Stage 3b"** (training better-matched verifiers, ADR-0002) is an **optional enhancement**
-  only, not a stage. Not run without Mounir's yes.
-- Stage 4 needs a verifier. Measured **zero-shot** instead of training more arms (inference only,
-  train claims, no dev budget spent).
+**Recent history, in order:**
+1. 2026-10-07 Mounir rescoped Stage 3 back to the plan. The old "Stage 3" (fine-tuned verifier)
+   is now "Stage 2, extended". Training better verifiers = optional enhancement, needs his yes.
+2. Zero-shot verifier for Stage 4 measured (ADR-0002): PubMedBERT-MNLI-MedNLI, no training,
+   condition A on the 505 evidence-bearing train claims = 80.6% [77.0, 84.0] vs majority 65.7%;
+   SUPPORT 85% / CONTRADICT 72%, no see-saw. Weak at abstention: NEI recall 8.2% at claim level
+   with no threshold. That is Stage 5, and the threshold is Mounir's decision.
+3. PR #2 (head alignment, input order, bf16, logging) merged by Mounir. Two commits pushed after
+   the merge were orphaned and recovered into PR #3.
+4. Dense retrieval built and measured (train, n=505): BM25 hit@1 74.9 [70.9, 78.6] / hit@10 92.7;
+   dense (all-MiniLM-L6-v2) hit@1 68.7 [64.6, 72.7] / hit@10 93.3. Complementary: only-BM25 22,
+   only-dense 25, union 97.6% at top 10. FAISS ~8 ms vs numpy ~23-31 ms (warmed up, fair
+   baseline). Not a speed necessity at 5,183 documents.
+5. Lesson (visual + snippets) on dense vectors, FAISS, and bi- vs cross-encoder (Checkpoints 3
+   and 4) delivered 2026-10-08. The encoder was NOT surveyed (it was already on disk); it needs an
+   ADR-0002-style audit before the final Stage 3 comparison.
+
+**Mounir's decisions, 2026-10-14 (Stage 3 part 2):**
+- YES: core reranker (BM25 + dense shortlist, fine-tuned cross-encoder) + BOTH controls
+  (rank fusion RRF; the off-the-shelf ms-marco cross-encoder zero-shot as a reranker).
+- YES: enhancement C (cost per claim for every pipeline) and B (contamination audit of candidate
+  models). HOLD: A (false-negative audit) until the reranker works.
+- Before ANY Stage 3 code: teach dense retrieval and FAISS properly (why this embedding model,
+  with model cards; what the index stores), then the reranker training concept.
+- **Mounir writes the metric code and the cost-logging code himself** (Claude writes the spec and
+  the tests, he writes the function, Claude corrects him).
+- Teach the interview fundamentals (embeddings, chunk size, measuring retrieval quality) with
+  this project's measured numbers.
+
+**Measured 2026-10-14 (docs/concepts/11):** encoder survey + contamination audit done.
+MedCPT: hit@1 78.0 / hit@10 98.8 (best hit@10, no MTEB-SciFact claim in its card). bge-small
+(80.8) and e5-base (78.0) are flagged: their cards report MTEB SciFact = our dev (OQ-014).
+MiniLM's 256-token limit cuts 53.9% of gold rationales; sentence chunks beat whole abstracts
+(hit@1 76.4 vs 68.7). FAISS Flat is the right index at 5,183 vectors. The lesson goes to Mounir
+in chat next, then the reranker training concept, then his metric + cost-logging code.
 
 **Next, in order:**
-1. Zero-shot NLI verifier results, delivered in chat.
-2. PR #2 reviewed IN CHAT with code snippets (Mounir doesn't open files), then merged.
-3. **Teach FAISS and dense retrieval properly** before building anything with them: why it and
-   not the alternative, the key API calls, a walkthrough of real code. Use a new format.
-4. Stage 3 proper: dense retrieval baseline (FAISS) + learned reranker vs BM25, retrieval metrics.
+1. Stage 3 part 2 DESIGN in chat (design before code): reranker over the BM25 + dense
+   shortlist; the cheap control first (rank fusion); an encoder/reranker survey with a
+   contamination audit; training negatives (the plan's "unannotated != negative" trap).
+   Mounir decides the options.
+2. Build, run on his PC plugged in, report in chat with snippets and a visual.
+3. Drift check vs PROJECT_PLAN.md Stage 3 at the end; 2-3 optional enhancements with cost,
+   benefit and learning.
 
-**Working rules (2026-10-07):** Mounir does not write code; every explanation includes real code
-snippets walked through in chat; anything important goes in chat, not only in files; session
-summary in chat at the end; end-of-stage optional enhancements with cost, benefit and learning.
+**Working rules (all in memory too):** Mounir does not write code or docs; every explanation
+uses real code snippets in chat; important information goes in chat, not only in files; visuals
+where possible, else Graphviz/Mermaid code; drift check at every milestone; vary teaching
+formats; no unmeasured numbers; be ambitious in proposals, never silently add scope; no
+minimising language ("small enough", "easy", "just").
 
 ## BUILDING IS PAUSED (2026-09-26) -- read before doing anything
 
