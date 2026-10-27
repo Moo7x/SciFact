@@ -3,11 +3,29 @@
 > A cold session reads **this file first**, then `docs/PROJECT_PLAN.md`, then the current
 > milestone file in `milestones/`.
 
-**Last updated:** 2026-09-11
-**Current stage:** Stage 0 — look at the data
-**Branch:** `feat/stage-0-scaffold`
+**Last updated:** 2026-10-27
+**Current stage:** Stage 3 part 2 — the reranker
+**Branch:** `feat/stage-3-reranker` (exercise branch: `exercise/ndcg-at-k`)
 
 ---
+
+## UPDATE 2026-10-27 -- read before the 2026-10-13 block below
+
+- **PR #3 merged by Mounir.** Stage 3 part 1 (dense, encoder survey, FAISS, chunking) is on main.
+- **Defaults taken after he read the lesson and said "proceed"** (he can override): first-stage
+  dense = **MedCPT** (best hit@10, no contamination claim); shortlist = BM25 ∪ MedCPT top-k.
+  Sentence chunks were measured only with MiniLM, so chunking for MedCPT is a measured ablation
+  in this stage, not an assumption.
+- **NEW WORKING METHOD (his request: faster, closer to how companies work now):** see memory
+  `ai-native-learning-loop`. Per component: he writes a short spec/acceptance criterion, Claude
+  builds, he reviews the PR with 3 targeted questions and makes the decision from the numbers.
+  Plus one **solo rep** per stage: a task he does himself with any AI assistant, gated by
+  Claude's tests, reviewed by Claude like a strict senior reviewer.
+- **Solo rep 1 = `ndcg_at_k`** on branch `exercise/ndcg-at-k`: stub + 9 acceptance tests,
+  verified against an uncommitted reference implementation. CI is red there on purpose until he
+  implements it. Solo rep 2 = cost-per-claim logging (spec to come with the reranker).
+- **Remaining:** Stage 3 part 2 → 4 (pipeline vs bounded agent; needs an LLM decision) → 5
+  (abstention threshold, his call) → 6 (FastAPI, traces, Docker, hostile input, load test).
 
 ## RESUME HERE (2026-10-13) -- read this first after any context reset
 
