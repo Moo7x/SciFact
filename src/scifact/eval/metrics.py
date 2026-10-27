@@ -94,3 +94,18 @@ def reciprocal_rank(ranked: Sequence[int], gold: set[int]) -> float:
         if item in gold:
             return 1.0 / i
     return 0.0
+
+
+def ndcg_at_k(ranked: Sequence[int], gold: set[int], k: int) -> float:
+    """Normalised discounted cumulative gain at k, with binary relevance. EXERCISE: Mounir's.
+
+    Spec (the tests in tests/test_ndcg.py are the acceptance gate):
+    * gain of the item at rank i (1-based) is 1 if it is in `gold`, else 0;
+    * DCG@k = sum over the top k of gain_i / log2(i + 1);
+    * IDCG@k = the DCG of a perfect ranking: min(len(gold), k) gold items in the top slots;
+    * return DCG@k / IDCG@k, a float in [0, 1];
+    * `ranked` may be shorter than k;
+    * empty `gold` or k < 1 raises ValueError (nDCG is undefined there; the harness only scores
+      claims that have evidence, so an empty gold set reaching this function is a bug upstream).
+    """
+    raise NotImplementedError("exercise: implement ndcg_at_k so tests/test_ndcg.py passes")
